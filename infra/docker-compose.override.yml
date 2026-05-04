@@ -1,0 +1,32 @@
+# Local development overrides — hot reload, no rebuild needed on code changes
+services:
+  api:
+    build:
+      target: development
+    volumes:
+      - ../apps/api/src:/app/src:cached
+      - ../apps/api/migrations:/app/migrations:cached
+    command: uvicorn dealflow.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      ENVIRONMENT: development
+      LOG_LEVEL: DEBUG
+
+  worker:
+    build:
+      target: development
+    volumes:
+      - ../apps/worker/src:/app/src:cached
+    command: python -m arq worker.main.WorkerSettings --watch src
+    environment:
+      ENVIRONMENT: development
+      LOG_LEVEL: DEBUG
+
+  web:
+    build:
+      target: development
+    volumes:
+      - ../apps/web/src:/app/src:cached
+      - ../apps/web/public:/app/public:cached
+    command: pnpm dev
+    environment:
+      NODE_ENV: development
