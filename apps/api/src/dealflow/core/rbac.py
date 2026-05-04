@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from fnmatch import fnmatch
 
 import sqlalchemy as sa
@@ -28,10 +28,7 @@ def check_permission(granted: list[str], required: str) -> bool:
     Supports fnmatch globs: "*" covers everything, "leads:*" covers any leads
     permission, "leads:read" is an exact match.
     """
-    for g in granted:
-        if g == "*" or fnmatch(required, g):
-            return True
-    return False
+    return any(g == "*" or fnmatch(required, g) for g in granted)
 
 
 @dataclass(frozen=True)
@@ -85,8 +82,8 @@ async def resolve_context(
         raise ValueError("not_a_member")
 
     if membership.expires_at is not None:
-        now = datetime.now(tz=timezone.utc)
-        if membership.expires_at.replace(tzinfo=timezone.utc) < now:
+        now = datetime.now(tz=UTC)
+        if membership.expires_at.replace(tzinfo=UTC) < now:
             raise ValueError("membership_expired")
 
     permissions = await _load_role_permissions(membership.role_slug, session)

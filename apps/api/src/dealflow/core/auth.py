@@ -1,5 +1,5 @@
 import time
-from typing import Any
+from typing import Any, cast
 
 import httpx
 from fastapi import HTTPException, status
@@ -49,7 +49,7 @@ async def fetch_jwks(domain: str, *, force: bool = False) -> dict[str, Any]:
     async with httpx.AsyncClient(timeout=10.0) as client:
         resp = await client.get(f"https://{domain}/.well-known/jwks.json")
         resp.raise_for_status()
-    jwks = resp.json()
+    jwks = cast(dict[str, Any], resp.json())
     _cache.set(jwks)
     return jwks
 
@@ -78,7 +78,7 @@ async def decode_jwt(token: str, domain: str, audience: str) -> TokenPayload:
     try:
         header = jwt.get_unverified_header(token)
     except JWTError:
-        raise _CREDENTIALS_ERROR
+        raise _CREDENTIALS_ERROR from None
 
     kid = header.get("kid")
     jwks = await fetch_jwks(domain)
@@ -101,6 +101,6 @@ async def decode_jwt(token: str, domain: str, audience: str) -> TokenPayload:
             issuer=f"https://{domain}/",
         )
     except JWTError:
-        raise _CREDENTIALS_ERROR
+        raise _CREDENTIALS_ERROR from None
 
     return TokenPayload(**payload)

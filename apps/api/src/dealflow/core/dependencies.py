@@ -1,5 +1,6 @@
 import uuid
-from typing import Annotated
+from collections.abc import Callable, Coroutine
+from typing import Annotated, Any
 
 from fastapi import Depends, Header, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -40,11 +41,11 @@ async def get_tenant_id(
         )
     try:
         return uuid.UUID(x_tenant_id)
-    except ValueError:
+    except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"code": "invalid_tenant", "message": "X-Tenant-ID must be a valid UUID"},
-        )
+        ) from exc
 
 
 async def get_tenant_context(
@@ -60,19 +61,21 @@ async def get_tenant_context(
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail={"code": "user_not_found", "message": "Authenticated user not registered"},
-            )
+            ) from exc
         if code == "membership_expired":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail={"code": "membership_expired", "message": "Tenant membership has expired"},
-            )
+            ) from exc
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={"code": "not_a_member", "message": "User is not a member of this tenant"},
-        )
+        ) from exc
 
 
-def require_permission(permission: str):
+def require_permission(
+    permission: str,
+) -> Callable[[RequestContext], Coroutine[Any, Any, RequestContext]]:
     """Dependency factory. Usage: `Depends(require_permission("leads:read"))`."""
 
     async def _check(

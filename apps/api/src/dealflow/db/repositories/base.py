@@ -33,7 +33,9 @@ class TenantRepository(Generic[T]):
         tenant_id: uuid.UUID,
     ) -> None:
         if not hasattr(model, "tenant_id"):
-            raise TypeError(f"{model.__name__} has no tenant_id column — cannot use TenantRepository")
+            raise TypeError(
+                f"{model.__name__} has no tenant_id column — cannot use TenantRepository"
+            )
         self._model = model
         self._session = session
         self._tenant_id = tenant_id

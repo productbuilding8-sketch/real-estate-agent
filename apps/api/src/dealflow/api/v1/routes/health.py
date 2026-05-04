@@ -62,7 +62,7 @@ async def _check_redis() -> bool:
 
         settings = get_settings()
         client = aioredis.from_url(settings.redis_url, socket_connect_timeout=2)
-        await client.ping()
+        await client.ping()  # type: ignore[misc]
         await client.aclose()
         return True
     except Exception:

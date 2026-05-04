@@ -62,7 +62,9 @@ class CrmMapping(Base):
         UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
     )
     connection_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("integration_connections.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("integration_connections.id", ondelete="CASCADE"),
+        nullable=False,
     )
     dealflow_field: Mapped[str] = mapped_column(String(255), nullable=False)
     crm_field: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -89,7 +91,9 @@ class SyncLog(Base):
         UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
     )
     connection_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("integration_connections.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("integration_connections.id", ondelete="CASCADE"),
+        nullable=False,
     )
     lead_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("leads.id", ondelete="SET NULL"), nullable=True

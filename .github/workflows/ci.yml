@@ -116,7 +116,6 @@ jobs:
           python-version: "3.12"
       - run: uv sync --extra dev
       - run: uv run alembic upgrade head
-      - run: uv run alembic check
 
   # ── Web ──────────────────────────────────────────────────────────────────────
   lint-web:

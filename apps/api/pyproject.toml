@@ -47,12 +47,24 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
-ignore = ["E501"]
+ignore = [
+    "E501",
+    "B008",   # FastAPI Depends() in function defaults is the intended pattern
+    "UP046",  # Generic[T] subclass — new syntax is Python 3.13+ only
+]
 
 [tool.mypy]
 python_version = "3.12"
 strict = true
 plugins = ["sqlalchemy.ext.mypy.plugin"]
+
+[[tool.mypy.overrides]]
+module = "jose.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "pgvector.*"
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

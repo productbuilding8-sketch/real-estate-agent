@@ -8,7 +8,6 @@ from typing import Any
 
 import sqlalchemy as sa
 from sqlalchemy import (
-    BigInteger,
     Boolean,
     DateTime,
     Float,
@@ -19,7 +18,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
@@ -66,9 +65,7 @@ class IngestionEvent(Base):
     )
     idempotency_key: Mapped[str] = mapped_column(String(255), nullable=False)
     event_type: Mapped[str] = mapped_column(String(100), nullable=False)
-    status: Mapped[str] = mapped_column(
-        String(50), nullable=False, server_default="received"
-    )
+    status: Mapped[str] = mapped_column(String(50), nullable=False, server_default="received")
     raw_payload: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     lead_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("leads.id", ondelete="SET NULL"), nullable=True
@@ -81,7 +78,9 @@ class IngestionEvent(Base):
     )
 
     __table_args__ = (
-        UniqueConstraint("tenant_id", "source_id", "idempotency_key", name="uq_ingestion_events_idempotency"),
+        UniqueConstraint(
+            "tenant_id", "source_id", "idempotency_key", name="uq_ingestion_events_idempotency"
+        ),
         Index("ix_ingestion_events_source_id", "source_id"),
         Index("ix_ingestion_events_status", "status"),
     )
@@ -168,8 +167,12 @@ class Lead(Base):
     assigned_agent_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
-    first_response_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    last_activity_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    first_response_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_activity_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     stale_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     escalated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
@@ -233,9 +236,7 @@ class LeadScore(Base):
     score: Mapped[float] = mapped_column(Float, nullable=False)
     scoring_model: Mapped[str] = mapped_column(String(50), nullable=False, server_default="v1")
     factors: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    ai_action_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), nullable=True
-    )
+    ai_action_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     crm_score_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -256,9 +257,7 @@ class LeadNextAction(Base):
     lead_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("leads.id", ondelete="CASCADE"), nullable=False
     )
-    ai_action_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), nullable=True
-    )
+    ai_action_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     action_type: Mapped[str] = mapped_column(String(50), nullable=False)
     priority: Mapped[str] = mapped_column(String(20), nullable=False, server_default="medium")
     description: Mapped[str | None] = mapped_column(Text, nullable=True)

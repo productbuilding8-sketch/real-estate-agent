@@ -24,10 +24,9 @@ from sqlalchemy.sql import func
 try:
     from pgvector.sqlalchemy import Vector
 except ImportError:  # pgvector not installed — embedding column unavailable
-    Vector = None  # type: ignore[assignment,misc]
+    Vector = None
 
 from dealflow.db.session import Base
-
 
 # ── Audit / Timeline ─────────────────────────────────────────────────────────
 
@@ -60,8 +59,11 @@ class AuditLog(Base):
 
     __table_args__ = (
         Index("ix_audit_logs_tenant_entity", "tenant_id", "entity_id", "created_at"),
-        Index("ix_audit_logs_pii_unscrubbed", "pii_fields_scrubbed",
-              postgresql_where=sa.text("pii_fields_scrubbed = false")),
+        Index(
+            "ix_audit_logs_pii_unscrubbed",
+            "pii_fields_scrubbed",
+            postgresql_where=sa.text("pii_fields_scrubbed = false"),
+        ),
     )
 
 
@@ -83,15 +85,15 @@ class ActivityTimeline(Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     actor_type: Mapped[str] = mapped_column(String(20), nullable=False, server_default="system")
-    visible_to_agent: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sa.true())
+    visible_to_agent: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=sa.true()
+    )
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    __table_args__ = (
-        Index("ix_activity_timeline_lead_id", "lead_id", "occurred_at"),
-    )
+    __table_args__ = (Index("ix_activity_timeline_lead_id", "lead_id", "occurred_at"),)
 
 
 # ── Knowledge Base ────────────────────────────────────────────────────────────

@@ -5,10 +5,12 @@ The JWT is signed with a locally generated RSA key pair and verified
 end-to-end through the same decode_jwt() path used in production.
 """
 
-import time
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
+# ── shared key pair for the test session ──────────────────────────────────────
+from cryptography.hazmat.primitives.asymmetric import rsa
 from httpx import AsyncClient
 
 from dealflow.config import Settings
@@ -16,16 +18,10 @@ from dealflow.core.auth import TokenPayload, decode_jwt
 from tests.helpers.jwt_factory import (
     TEST_AUDIENCE,
     TEST_DOMAIN,
-    TEST_KID,
     build_jwks,
     generate_rsa_keypair,
     make_token,
-    private_key_to_pem,
 )
-
-# ── shared key pair for the test session ──────────────────────────────────────
-import pytest
-from cryptography.hazmat.primitives.asymmetric import rsa
 
 
 @pytest.fixture(scope="module")
@@ -45,6 +41,7 @@ def valid_token(rsa_key: rsa.RSAPrivateKey) -> str:
 
 # ── unit tests: decode_jwt() ──────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_valid_token_decodes(valid_token: str, jwks: dict) -> None:
     with patch("dealflow.core.auth.fetch_jwks", new=AsyncMock(return_value=jwks)):
@@ -61,6 +58,7 @@ async def test_expired_token_raises_401(rsa_key: rsa.RSAPrivateKey, jwks: dict) 
     expired = make_token(rsa_key, exp_offset=-60)
     with patch("dealflow.core.auth.fetch_jwks", new=AsyncMock(return_value=jwks)):
         from fastapi import HTTPException
+
         with pytest.raises(HTTPException) as exc:
             await decode_jwt(expired, TEST_DOMAIN, TEST_AUDIENCE)
     assert exc.value.status_code == 401
@@ -71,6 +69,7 @@ async def test_wrong_audience_raises_401(rsa_key: rsa.RSAPrivateKey, jwks: dict)
     wrong_aud = make_token(rsa_key, audience="https://wrong.audience.com")
     with patch("dealflow.core.auth.fetch_jwks", new=AsyncMock(return_value=jwks)):
         from fastapi import HTTPException
+
         with pytest.raises(HTTPException) as exc:
             await decode_jwt(wrong_aud, TEST_DOMAIN, TEST_AUDIENCE)
     assert exc.value.status_code == 401
@@ -82,6 +81,7 @@ async def test_wrong_signature_raises_401(jwks: dict) -> None:
     forged = make_token(other_key)
     with patch("dealflow.core.auth.fetch_jwks", new=AsyncMock(return_value=jwks)):
         from fastapi import HTTPException
+
         with pytest.raises(HTTPException) as exc:
             await decode_jwt(forged, TEST_DOMAIN, TEST_AUDIENCE)
     assert exc.value.status_code == 401
@@ -90,9 +90,12 @@ async def test_wrong_signature_raises_401(jwks: dict) -> None:
 @pytest.mark.asyncio
 async def test_garbage_token_raises_401(jwks: dict) -> None:
     from fastapi import HTTPException
-    with patch("dealflow.core.auth.fetch_jwks", new=AsyncMock(return_value=jwks)):
-        with pytest.raises(HTTPException) as exc:
-            await decode_jwt("not.a.jwt", TEST_DOMAIN, TEST_AUDIENCE)
+
+    with (
+        patch("dealflow.core.auth.fetch_jwks", new=AsyncMock(return_value=jwks)),
+        pytest.raises(HTTPException) as exc,
+    ):
+        await decode_jwt("not.a.jwt", TEST_DOMAIN, TEST_AUDIENCE)
     assert exc.value.status_code == 401
 
 
@@ -102,16 +105,16 @@ async def test_unknown_kid_refreshes_cache_then_fails(
 ) -> None:
     token = make_token(rsa_key, kid="unknown-kid")
     empty_jwks: dict = {"keys": []}
-    with patch(
-        "dealflow.core.auth.fetch_jwks", new=AsyncMock(return_value=empty_jwks)
-    ):
+    with patch("dealflow.core.auth.fetch_jwks", new=AsyncMock(return_value=empty_jwks)):
         from fastapi import HTTPException
+
         with pytest.raises(HTTPException) as exc:
             await decode_jwt(token, TEST_DOMAIN, TEST_AUDIENCE)
     assert exc.value.status_code == 401
 
 
 # ── route tests: GET /api/v1/auth/me ─────────────────────────────────────────
+
 
 @pytest.fixture
 def auth_settings() -> Settings:
@@ -126,7 +129,9 @@ def auth_settings() -> Settings:
 @pytest.fixture
 async def auth_client(auth_settings: Settings) -> AsyncClient:
     from httpx import ASGITransport, AsyncClient
+
     from dealflow.main import create_app
+
     app = create_app(auth_settings)
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac

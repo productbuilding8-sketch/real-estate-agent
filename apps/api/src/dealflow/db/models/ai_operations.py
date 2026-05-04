@@ -24,7 +24,6 @@ from sqlalchemy.sql import func
 
 from dealflow.db.session import Base
 
-
 # ── AI ──────────────────────────────────────────────────────────────────────
 
 
@@ -44,9 +43,7 @@ class PromptVersion(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    __table_args__ = (
-        UniqueConstraint("name", "version", name="uq_prompt_versions_name_version"),
-    )
+    __table_args__ = (UniqueConstraint("name", "version", name="uq_prompt_versions_name_version"),)
 
 
 class AiAction(Base):

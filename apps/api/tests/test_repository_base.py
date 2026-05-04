@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import sqlalchemy as sa
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from dealflow.db.repositories.base import TenantRepository
 from dealflow.db.session import Base
 
-
 # ── helpers ───────────────────────────────────────────────────────────────────
+
 
 def _make_session() -> AsyncMock:
     """Return an AsyncSession mock where execute() returns a MagicMock result."""
@@ -33,8 +33,10 @@ def _make_result(value=None) -> MagicMock:
 
 # ── unit: constructor guards ──────────────────────────────────────────────────
 
+
 def test_init_rejects_model_without_tenant_id() -> None:
     """Models without tenant_id must not be wrapped — catch misconfiguration early."""
+
     class NoTenant(Base):
         __tablename__ = "no_tenant_test"
         id = sa.Column(sa.Integer, primary_key=True)
@@ -46,12 +48,14 @@ def test_init_rejects_model_without_tenant_id() -> None:
 
 def test_init_accepts_model_with_tenant_id() -> None:
     from dealflow.db.models.lead_ingestion import Lead
+
     session = _make_session()
     repo = TenantRepository(Lead, session, uuid.uuid4())
     assert repo._model is Lead
 
 
 # ── unit: get ─────────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_get_returns_row_when_found() -> None:
@@ -85,6 +89,7 @@ async def test_get_returns_none_when_not_found() -> None:
 
 
 # ── unit: list ────────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_list_returns_rows() -> None:
@@ -125,6 +130,7 @@ async def test_list_with_cursor_passes_through() -> None:
 
 # ── unit: add ─────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_add_stamps_tenant_id() -> None:
     from dealflow.db.models.lead_ingestion import Lead
@@ -143,6 +149,7 @@ async def test_add_stamps_tenant_id() -> None:
 
 
 # ── unit: delete ──────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_delete_returns_true_when_row_deleted() -> None:
@@ -173,6 +180,7 @@ async def test_delete_returns_false_when_row_not_found() -> None:
 
 # ── unit: exists ──────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_exists_returns_true() -> None:
     from dealflow.db.models.lead_ingestion import Lead
@@ -196,6 +204,7 @@ async def test_exists_returns_false() -> None:
 
 
 # ── integration: real DB ──────────────────────────────────────────────────────
+
 
 @pytest.mark.integration
 @pytest.mark.asyncio

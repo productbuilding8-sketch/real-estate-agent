@@ -1,4 +1,5 @@
 from collections.abc import AsyncGenerator
+from typing import Any
 
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -20,7 +21,7 @@ _session_factory: async_sessionmaker[AsyncSession] | None = None
 
 def init_db(database_url: str, *, testing: bool = False) -> None:
     global _engine, _session_factory
-    kwargs: dict = {"echo": False}
+    kwargs: dict[str, Any] = {"echo": False}
     if testing:
         # NullPool prevents connection sharing between test cases
         kwargs["poolclass"] = NullPool

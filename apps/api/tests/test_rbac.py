@@ -13,8 +13,8 @@ import pytest
 
 from dealflow.core.rbac import RequestContext, check_permission, clear_role_cache
 
-
 # ── unit: permission logic ────────────────────────────────────────────────────
+
 
 def test_exact_match_allowed() -> None:
     assert check_permission(["leads:read"], "leads:read") is True
@@ -72,6 +72,7 @@ def test_request_context_is_frozen() -> None:
 
 # ── unit: HTTP layer — direct dependency testing ──────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_auth_me_without_tenant_still_works(client) -> None:
     """The /auth/me route does NOT require a tenant header — verify it works."""
@@ -91,8 +92,9 @@ async def test_auth_me_without_tenant_still_works(client) -> None:
 
 @pytest.mark.asyncio
 async def test_invalid_tenant_uuid_raises_400() -> None:
-    from dealflow.core.dependencies import get_tenant_id
     from fastapi import HTTPException
+
+    from dealflow.core.dependencies import get_tenant_id
 
     with pytest.raises(HTTPException) as exc_info:
         await get_tenant_id(x_tenant_id="not-a-uuid")
@@ -102,8 +104,9 @@ async def test_invalid_tenant_uuid_raises_400() -> None:
 
 @pytest.mark.asyncio
 async def test_missing_tenant_header_raises_400() -> None:
-    from dealflow.core.dependencies import get_tenant_id
     from fastapi import HTTPException
+
+    from dealflow.core.dependencies import get_tenant_id
 
     with pytest.raises(HTTPException) as exc_info:
         await get_tenant_id(x_tenant_id=None)
@@ -122,10 +125,13 @@ async def test_valid_tenant_uuid_parses() -> None:
 
 # ── unit: resolve_context with mocked DB ──────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_resolve_context_user_not_found() -> None:
     from unittest.mock import MagicMock
+
     from sqlalchemy.ext.asyncio import AsyncSession
+
     from dealflow.core.rbac import resolve_context
 
     clear_role_cache()
@@ -143,6 +149,7 @@ async def test_resolve_context_user_not_found() -> None:
 @pytest.mark.asyncio
 async def test_resolve_context_not_a_member() -> None:
     from unittest.mock import MagicMock
+
     from dealflow.core.rbac import resolve_context
     from dealflow.db.models.tenant_auth import User
 
@@ -168,6 +175,7 @@ async def test_resolve_context_not_a_member() -> None:
 @pytest.mark.asyncio
 async def test_resolve_context_success() -> None:
     from unittest.mock import MagicMock
+
     from dealflow.core.rbac import resolve_context
     from dealflow.db.models.tenant_auth import Role, TenantMembership, User
 
@@ -210,6 +218,7 @@ async def test_resolve_context_success() -> None:
 
 
 # ── integration: full DB chain ─────────────────────────────────────────────────
+
 
 @pytest.mark.integration
 @pytest.mark.asyncio

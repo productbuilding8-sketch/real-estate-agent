@@ -14,7 +14,6 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
-    Text,
     UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -54,14 +53,18 @@ class LeadSlaResult(Base):
         UUID(as_uuid=True), ForeignKey("leads.id", ondelete="CASCADE"), nullable=False
     )
     first_response_met: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
-    first_response_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    first_response_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     first_response_mins: Mapped[int | None] = mapped_column(Integer, nullable=True)
     agent_followup_met: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     is_stale: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sa.false())
     stale_since: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     is_escalated: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sa.false())
     escalated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    last_computed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_computed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     __table_args__ = (UniqueConstraint("lead_id", name="uq_lead_sla_results_lead_id"),)
 
@@ -74,13 +77,21 @@ class MessagingPolicySettings(Base):
         UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
     )
     sms_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sa.true())
-    whatsapp_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sa.false())
+    whatsapp_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=sa.false()
+    )
     email_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sa.true())
-    imessage_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sa.false())
+    imessage_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=sa.false()
+    )
     rcs_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sa.false())
     auto_send_sms: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sa.false())
-    auto_send_whatsapp: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sa.false())
-    auto_send_email: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sa.false())
+    auto_send_whatsapp: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=sa.false()
+    )
+    auto_send_email: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=sa.false()
+    )
     custom_rules: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False

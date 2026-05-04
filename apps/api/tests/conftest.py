@@ -1,5 +1,6 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from dealflow.config import Settings
@@ -37,6 +38,7 @@ async def db_setup(test_settings: Settings):
     drops them after the session. Only used by integration tests."""
     init_db(test_settings.database_url, testing=True)
     async with get_engine().begin() as conn:
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.create_all)
     yield
     async with get_engine().begin() as conn:

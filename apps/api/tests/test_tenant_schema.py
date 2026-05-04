@@ -10,27 +10,39 @@ from dealflow.db.models import (
     AgentProfile,
     Role,
     Tenant,
-    TenantInvitation,
     TenantMembership,
     User,
 )
 from dealflow.db.session import Base
 
-
 # ── unit: model metadata ──────────────────────────────────────────────────────
+
 
 def test_all_models_registered_in_metadata() -> None:
     table_names = set(Base.metadata.tables.keys())
     expected = {
-        "tenants", "users", "roles", "tenant_memberships",
-        "agent_profiles", "tenant_invitations",
+        "tenants",
+        "users",
+        "roles",
+        "tenant_memberships",
+        "agent_profiles",
+        "tenant_invitations",
     }
     assert expected.issubset(table_names)
 
 
 def test_tenant_table_columns() -> None:
     cols = {c.name for c in Tenant.__table__.columns}
-    assert {"id", "name", "slug", "timezone", "is_active", "settings", "created_at", "updated_at"}.issubset(cols)
+    assert {
+        "id",
+        "name",
+        "slug",
+        "timezone",
+        "is_active",
+        "settings",
+        "created_at",
+        "updated_at",
+    }.issubset(cols)
 
 
 def test_user_has_no_tenant_fk() -> None:
@@ -65,30 +77,31 @@ def test_tenant_membership_unique_constraint() -> None:
 
 # ── integration: real DB (requires Docker) ────────────────────────────────────
 
+
 @pytest.mark.integration
 @pytest.mark.asyncio
 async def test_create_tenant_and_global_user(db_session: AsyncSession) -> None:
     tenant = Tenant(name="Acme Realty", slug=f"acme-{uuid.uuid4().hex[:8]}")
-    db_client.add(tenant)
-    await db_client.flush()
+    db_session.add(tenant)
+    await db_session.flush()
 
     user = User(
         auth0_sub=f"auth0|{uuid.uuid4().hex}",
         email="alice@acme.com",
         name="Alice",
     )
-    db_client.add(user)
-    await db_client.flush()
+    db_session.add(user)
+    await db_session.flush()
 
     membership = TenantMembership(
         user_id=user.id,
         tenant_id=tenant.id,
         role_slug="agent",
     )
-    db_client.add(membership)
-    await db_client.flush()
+    db_session.add(membership)
+    await db_session.flush()
 
-    result = await db_client.execute(
+    result = await db_session.execute(
         sa.select(TenantMembership).where(TenantMembership.tenant_id == tenant.id)
     )
     memberships = result.scalars().all()

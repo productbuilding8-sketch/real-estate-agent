@@ -7,15 +7,15 @@ Integration tests (marked) require Docker + running Postgres.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 from dealflow.services.audit import AuditService
 
-
 # ── unit: log() ───────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_log_creates_audit_entry() -> None:
@@ -124,6 +124,7 @@ async def test_log_pii_scrubbed_starts_false() -> None:
 
 # ── unit: add_timeline_event() ────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_add_timeline_event_basic() -> None:
     session = AsyncMock()
@@ -173,7 +174,7 @@ async def test_add_timeline_event_explicit_occurred_at() -> None:
     session.add = MagicMock()
     session.flush = AsyncMock()
 
-    occurred = datetime(2026, 1, 15, 10, 30, 0, tzinfo=timezone.utc)
+    occurred = datetime(2026, 1, 15, 10, 30, 0, tzinfo=UTC)
     svc = AuditService(session, tenant_id=uuid.uuid4())
     event = await svc.add_timeline_event(
         lead_id=uuid.uuid4(),
@@ -190,13 +191,13 @@ async def test_add_timeline_event_defaults_occurred_at_to_now() -> None:
     session.add = MagicMock()
     session.flush = AsyncMock()
 
-    before = datetime.now(tz=timezone.utc)
+    before = datetime.now(tz=UTC)
     svc = AuditService(session, tenant_id=uuid.uuid4())
     event = await svc.add_timeline_event(
         lead_id=uuid.uuid4(),
         event_type="lead.viewed",
     )
-    after = datetime.now(tz=timezone.utc)
+    after = datetime.now(tz=UTC)
 
     assert event.occurred_at is not None
     assert before <= event.occurred_at <= after
@@ -223,10 +224,12 @@ async def test_add_timeline_event_with_actor() -> None:
 
 # ── integration: real DB ──────────────────────────────────────────────────────
 
+
 @pytest.mark.integration
 @pytest.mark.asyncio
 async def test_audit_log_persisted_to_db(db_session) -> None:
     import sqlalchemy as sa
+
     from dealflow.db.models.audit_knowledge import AuditLog
     from dealflow.db.models.tenant_auth import Tenant
 
@@ -242,9 +245,7 @@ async def test_audit_log_persisted_to_db(db_session) -> None:
         after={"status": "new"},
     )
 
-    result = await db_session.execute(
-        sa.select(AuditLog).where(AuditLog.id == entry.id)
-    )
+    result = await db_session.execute(sa.select(AuditLog).where(AuditLog.id == entry.id))
     persisted = result.scalar_one_or_none()
 
     assert persisted is not None
@@ -257,6 +258,7 @@ async def test_audit_log_persisted_to_db(db_session) -> None:
 @pytest.mark.asyncio
 async def test_timeline_event_persisted_to_db(db_session) -> None:
     import sqlalchemy as sa
+
     from dealflow.db.models.audit_knowledge import ActivityTimeline
     from dealflow.db.models.lead_ingestion import Contact, Lead, LeadSource
     from dealflow.db.models.tenant_auth import Tenant

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -90,7 +90,7 @@ class AuditService:
             actor_id=actor_id,
             actor_type=actor_type,
             visible_to_agent=visible_to_agent,
-            occurred_at=occurred_at or datetime.now(tz=timezone.utc),
+            occurred_at=occurred_at or datetime.now(tz=UTC),
         )
         self._session.add(event)
         await self._session.flush()

@@ -11,7 +11,6 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
-    Integer,
     String,
     Text,
     UniqueConstraint,
@@ -44,7 +43,9 @@ class Conversation(Base):
     )
 
     __table_args__ = (
-        UniqueConstraint("lead_id", "contact_id", "channel", name="uq_conversations_lead_contact_channel"),
+        UniqueConstraint(
+            "lead_id", "contact_id", "channel", name="uq_conversations_lead_contact_channel"
+        ),
         Index("ix_conversations_tenant_id", "tenant_id"),
         Index("ix_conversations_lead_id", "lead_id"),
     )
@@ -70,7 +71,9 @@ class Message(Base):
     sent_by_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
-    is_ai_generated: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=sa.false())
+    is_ai_generated: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=sa.false()
+    )
     # ai_action_id FK added in migration 0004 after ai_actions table exists
     ai_action_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
