@@ -158,7 +158,14 @@ class Lead(Base):
         UUID(as_uuid=True), ForeignKey("lead_sources.id", ondelete="RESTRICT"), nullable=False
     )
     ingestion_event_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("ingestion_events.id", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True),
+        ForeignKey(
+            "ingestion_events.id",
+            ondelete="SET NULL",
+            use_alter=True,
+            name="fk_leads_ingestion_event_id",
+        ),
+        nullable=True,
     )
     status: Mapped[str] = mapped_column(String(50), nullable=False, server_default="new")
     lead_type: Mapped[str] = mapped_column(String(50), nullable=False, server_default="unknown")
