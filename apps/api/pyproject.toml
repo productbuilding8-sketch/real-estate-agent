@@ -21,6 +21,7 @@ dependencies = [
     "python-multipart>=0.0.18",
     "structlog>=24.4.0",
     "pgvector>=0.3.0",
+    "arq>=0.26.1",
 ]
 
 [project.optional-dependencies]

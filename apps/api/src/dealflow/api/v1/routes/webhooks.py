@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, Header
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from dealflow.core.queue import get_job_queue
 from dealflow.db.session import get_session
 from dealflow.services.webhooks import WebhookService
 
@@ -39,6 +40,7 @@ async def ingest_lead_webhook(
     body: dict[str, Any],
     x_idempotency_key: Annotated[str | None, Header(alias="X-Idempotency-Key")] = None,
     x_hub_signature_256: Annotated[str | None, Header(alias="X-Hub-Signature-256")] = None,
+    job_queue: Annotated[Any, Depends(get_job_queue)] = None,
 ) -> WebhookResponse:
     raw_body = json.dumps(body).encode()
     idempotency_key = x_idempotency_key or hashlib.sha256(raw_body).hexdigest()
@@ -51,4 +53,12 @@ async def ingest_lead_webhook(
         idempotency_key=idempotency_key,
         signature=x_hub_signature_256,
     )
+
+    if event.lead_id is not None and job_queue is not None:
+        await job_queue.enqueue_job(
+            "score_lead_job",
+            lead_id=str(event.lead_id),
+            tenant_id=str(event.tenant_id),
+        )
+
     return WebhookResponse(event_id=event.id, status=event.status)
