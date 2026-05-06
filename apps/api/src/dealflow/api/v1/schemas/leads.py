@@ -1,4 +1,4 @@
-"""Response schemas for the leads API (DAI-018/019)."""
+"""Response schemas for the leads API (DAI-018/019/021)."""
 
 from __future__ import annotations
 
@@ -100,3 +100,25 @@ class LeadDetail(BaseModel):
     source: SourceSummary
     preferences: LeadPreferenceSchema | None = None
     timeline: list[TimelineEventSchema] = []
+
+
+# ── Mutation request / response schemas (DAI-021) ────────────────────────────
+
+
+class UpdateStatusRequest(BaseModel):
+    status: str
+    reason: str | None = None
+
+
+class AssignRequest(BaseModel):
+    agent_id: uuid.UUID | None = None
+
+
+class LeadStatusResponse(BaseModel):
+    id: uuid.UUID
+    status: str
+
+
+class LeadAssignResponse(BaseModel):
+    id: uuid.UUID
+    assigned_agent_id: uuid.UUID | None
