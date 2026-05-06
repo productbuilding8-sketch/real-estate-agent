@@ -1,9 +1,21 @@
-import { MOCK_LEADS } from "@/lib/mock-leads";
+import { getLeads } from "@/lib/api-client";
 import { LeadsTable } from "@/components/leads/leads-table";
 
 export const metadata = { title: "Leads — DealFlow AI" };
 
-export default function LeadsPage() {
+interface Props {
+  searchParams: Promise<{ q?: string; status?: string; page?: string }>;
+}
+
+export default async function LeadsPage({ searchParams }: Props) {
+  const params = await searchParams;
+  const page = Math.max(1, Number(params.page ?? 1));
+  const { items, total, page_size } = await getLeads({
+    search: params.q,
+    status: params.status !== "all" ? params.status : undefined,
+    page,
+  });
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -13,7 +25,7 @@ export default function LeadsPage() {
         </div>
       </div>
 
-      <LeadsTable leads={MOCK_LEADS} />
+      <LeadsTable leads={items} total={total} page={page} pageSize={page_size} />
     </div>
   );
 }
