@@ -9,11 +9,13 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dealflow.api.v1.schemas.leads import (
+    AddNoteRequest,
     AssignRequest,
     LeadAssignResponse,
     LeadDetail,
     LeadListResponse,
     LeadStatusResponse,
+    TimelineEventSchema,
     UpdateStatusRequest,
 )
 from dealflow.core.dependencies import require_permission
@@ -22,6 +24,7 @@ from dealflow.core.rbac import RequestContext
 from dealflow.db.session import get_session
 from dealflow.services.lead_mutations import LeadMutationService
 from dealflow.services.leads import LeadService
+from dealflow.services.timeline import TimelineService
 
 router = APIRouter(prefix="/leads", tags=["leads"])
 
@@ -114,3 +117,24 @@ async def assign_lead(
     service = LeadMutationService(session, ctx.tenant_id, ctx.user_id)
     lead = await service.assign(lead_id, body.agent_id)
     return LeadAssignResponse(id=lead.id, assigned_agent_id=lead.assigned_agent_id)
+
+
+@router.post(
+    "/{lead_id}/notes",
+    response_model=TimelineEventSchema,
+    status_code=201,
+    summary="Add a note to a lead's activity timeline",
+    responses={
+        403: {"description": "Insufficient permissions"},
+        404: {"description": "Lead not found"},
+    },
+)
+async def add_lead_note(
+    lead_id: uuid.UUID,
+    body: AddNoteRequest,
+    ctx: Annotated[RequestContext, Depends(require_permission("leads:write"))],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> TimelineEventSchema:
+    service = TimelineService(session, ctx.tenant_id, actor_id=ctx.user_id, actor_type="user")
+    entry = await service.add_note(lead_id, body.text)
+    return TimelineEventSchema.model_validate(entry)

@@ -1,4 +1,4 @@
-"""Response schemas for the leads API (DAI-018/019/021)."""
+"""Response schemas for the leads API (DAI-018/019/021/022)."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ContactSummary(BaseModel):
@@ -122,3 +122,7 @@ class LeadStatusResponse(BaseModel):
 class LeadAssignResponse(BaseModel):
     id: uuid.UUID
     assigned_agent_id: uuid.UUID | None
+
+
+class AddNoteRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=2000)

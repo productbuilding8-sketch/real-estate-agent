@@ -18,6 +18,7 @@ from dealflow.db.models.lead_ingestion import (
     Lead,
     LeadSource,
 )
+from dealflow.services.timeline import TimelineService
 
 _SUPPORTED_EVENT_TYPE = "lead.webhook"
 
@@ -86,6 +87,13 @@ class WebhookService:
         await self._session.flush()
 
         event.lead_id = lead.id
+        await self._session.flush()
+
+        TimelineService(self._session, tenant_id).log(
+            lead.id,
+            "lead.created",
+            {"source_id": str(source.id), "lead_type": lead.lead_type},
+        )
         await self._session.flush()
         await self._session.commit()
         return event
