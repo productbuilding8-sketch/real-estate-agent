@@ -7,6 +7,12 @@ import { LeadsPagination } from "@/components/leads/leads-pagination";
 import type { Lead } from "@/types/leads";
 import { cn } from "@/lib/cn";
 
+function initials(fullName: string | null): string {
+  const parts = (fullName ?? "?").trim().split(/\s+/);
+  if (parts.length >= 2) return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  return (parts[0]?.[0] ?? "?").toUpperCase();
+}
+
 function relativeTime(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
@@ -86,15 +92,14 @@ export function LeadsTable({ leads, total, page, pageSize }: LeadsTableProps) {
                               "bg-blue-500",
                               "bg-emerald-500",
                               "bg-rose-500",
-                            ][lead.contact.first_name.charCodeAt(0) % 5],
+                            ][(lead.contact.full_name?.charCodeAt(0) ?? 0) % 5],
                           )}
                         >
-                          {lead.contact.first_name[0]}
-                          {lead.contact.last_name[0]}
+                          {initials(lead.contact.full_name)}
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-gray-900 truncate">
-                            {lead.contact.first_name} {lead.contact.last_name}
+                            {lead.contact.full_name ?? "—"}
                           </p>
                           <p className="text-xs text-gray-500 truncate">{lead.contact.email}</p>
                         </div>
