@@ -6,6 +6,7 @@ import { ScoreBadge } from "@/components/leads/score-badge";
 import { LeadTimeline } from "@/components/leads/lead-timeline";
 import { LeadPreferences } from "@/components/leads/lead-preferences";
 import { LeadStatusControl } from "@/components/leads/lead-status-control";
+import { AddNoteForm } from "@/components/leads/add-note-form";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -172,6 +173,7 @@ export default async function LeadDetailPage({ params }: Props) {
               )}
             </div>
             <LeadTimeline events={lead.timeline} />
+            <AddNoteForm leadId={lead.id} />
           </div>
         </div>
       </div>
