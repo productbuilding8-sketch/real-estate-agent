@@ -7,6 +7,7 @@ from typing import Any
 from arq.connections import RedisSettings
 
 from worker.db import create_engine_and_session
+from worker.jobs.llm_score_lead import llm_score_lead_job
 from worker.jobs.score_lead import score_lead_job
 from worker.jobs.send_sms import send_sms_job
 from worker.settings import get_settings
@@ -27,7 +28,7 @@ async def on_shutdown(ctx: dict[str, Any]) -> None:
 
 
 class WorkerSettings:
-    functions = [score_lead_job, send_sms_job]
+    functions = [score_lead_job, send_sms_job, llm_score_lead_job]
     redis_settings = RedisSettings.from_dsn(_settings.redis_url)
     on_startup = on_startup
     on_shutdown = on_shutdown

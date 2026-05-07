@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     twilio_auth_token: str | None = None
     twilio_from_number: str | None = None
 
+    # OpenAI — optional; LLM scoring falls back to heuristic if not configured
+    openai_api_key: str | None = None
+    openai_model: str = "gpt-4o-mini"
+
 
 @lru_cache
 def get_settings() -> Settings:
