@@ -126,3 +126,12 @@ class LeadAssignResponse(BaseModel):
 
 class AddNoteRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=2000)
+
+
+class SendSmsRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=1600)
+
+
+class SendSmsResponse(BaseModel):
+    queued: bool
+    job_id: str | None = None

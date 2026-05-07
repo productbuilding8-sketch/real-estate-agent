@@ -5,6 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
+from arq.connections import ArqRedis
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,11 +16,14 @@ from dealflow.api.v1.schemas.leads import (
     LeadDetail,
     LeadListResponse,
     LeadStatusResponse,
+    SendSmsRequest,
+    SendSmsResponse,
     TimelineEventSchema,
     UpdateStatusRequest,
 )
 from dealflow.core.dependencies import require_permission
 from dealflow.core.errors import AppError
+from dealflow.core.queue import get_job_queue
 from dealflow.core.rbac import RequestContext
 from dealflow.db.session import get_session
 from dealflow.services.lead_mutations import LeadMutationService
@@ -138,3 +142,37 @@ async def add_lead_note(
     service = TimelineService(session, ctx.tenant_id, actor_id=ctx.user_id, actor_type="user")
     entry = await service.add_note(lead_id, body.text)
     return TimelineEventSchema.model_validate(entry)
+
+
+@router.post(
+    "/{lead_id}/sms",
+    response_model=SendSmsResponse,
+    status_code=202,
+    summary="Enqueue an outbound SMS to a lead",
+    responses={
+        403: {"description": "Insufficient permissions"},
+        404: {"description": "Lead not found"},
+    },
+)
+async def send_lead_sms(
+    lead_id: uuid.UUID,
+    body: SendSmsRequest,
+    ctx: Annotated[RequestContext, Depends(require_permission("leads:write"))],
+    session: Annotated[AsyncSession, Depends(get_session)],
+    queue: Annotated[ArqRedis | None, Depends(get_job_queue)] = None,
+) -> SendSmsResponse:
+    service = LeadService(session, ctx.tenant_id)
+    lead = await service.get_detail(lead_id)
+    if lead is None:
+        raise AppError("lead_not_found", "Lead not found", 404)
+
+    if queue is None:
+        return SendSmsResponse(queued=False)
+
+    job = await queue.enqueue_job(
+        "send_sms_job",
+        lead_id=str(lead_id),
+        tenant_id=str(ctx.tenant_id),
+        message=body.message,
+    )
+    return SendSmsResponse(queued=True, job_id=job.job_id if job else None)

@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     max_jobs: int = 10
     job_timeout: int = 300
 
+    # Twilio — optional; SMS sending is skipped if not configured
+    twilio_account_sid: str | None = None
+    twilio_auth_token: str | None = None
+    twilio_from_number: str | None = None
+
 
 @lru_cache
 def get_settings() -> Settings:
