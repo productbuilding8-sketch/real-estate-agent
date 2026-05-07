@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from dealflow.api.v1.routes import auth, health, leads, webhooks
+from dealflow.api.v1.routes import auth, health, leads, metrics, webhooks
 
 api_router = APIRouter(prefix="/api/v1")
 
@@ -12,6 +12,9 @@ api_router.include_router(auth.router)
 
 # Leads
 api_router.include_router(leads.router)
+
+# Metrics / Dashboard
+api_router.include_router(metrics.router)
 
 # Webhooks (no auth — HMAC-protected)
 api_router.include_router(webhooks.router)

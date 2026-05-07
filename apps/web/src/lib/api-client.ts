@@ -163,3 +163,51 @@ async function fetchLead(id: string): Promise<LeadDetail | null> {
   if (!res.ok) throw new Error(`API error ${res.status}`);
   return res.json() as Promise<LeadDetail>;
 }
+
+// ── Dashboard metrics ─────────────────────────────────────────────────────────
+
+export interface StatusCount {
+  status: string;
+  count: number;
+}
+
+export interface RecentEvent {
+  lead_id: string;
+  event_type: string;
+  occurred_at: string;
+}
+
+export interface DashboardMetrics {
+  total_leads: number;
+  by_status: StatusCount[];
+  converted_count: number;
+  conversion_rate: number;
+  recent_events: RecentEvent[];
+}
+
+export async function getDashboardMetrics(): Promise<DashboardMetrics> {
+  if (process.env.MOCK_API === "true" || !process.env.INTERNAL_API_URL) {
+    return getMockDashboardMetrics();
+  }
+  const res = await fetch(`${process.env.INTERNAL_API_URL}/api/v1/metrics/dashboard`, {
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return res.json() as Promise<DashboardMetrics>;
+}
+
+function getMockDashboardMetrics(): DashboardMetrics {
+  const counts: Record<string, number> = {};
+  for (const lead of MOCK_API_LEADS) {
+    counts[lead.status] = (counts[lead.status] ?? 0) + 1;
+  }
+  const total = MOCK_API_LEADS.length;
+  const converted = counts["converted"] ?? 0;
+  return {
+    total_leads: total,
+    by_status: Object.entries(counts).map(([status, count]) => ({ status, count })),
+    converted_count: converted,
+    conversion_rate: total > 0 ? Math.round((converted / total) * 10000) / 10000 : 0,
+    recent_events: [],
+  };
+}

@@ -17,6 +17,7 @@ CMD ["pnpm", "dev"]
 # ── builder target ─────────────────────────────────────────────────────────────
 FROM deps AS builder
 COPY . .
+ENV NEXT_STANDALONE=1
 RUN pnpm build
 
 # ── production target ──────────────────────────────────────────────────────────
