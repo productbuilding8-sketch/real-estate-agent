@@ -25,7 +25,7 @@ const navItems: NavItem[] = [
   { href: "/leads", label: "Leads", icon: Users },
   { href: "/team", label: "Team", icon: UserCog },
   { href: "/tasks", label: "Tasks", icon: CheckSquare, disabled: true },
-  { href: "/settings", label: "Settings", icon: Settings, disabled: true },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function Sidebar() {

@@ -211,3 +211,36 @@ function getMockDashboardMetrics(): DashboardMetrics {
     recent_events: [],
   };
 }
+
+// ── Integrations ──────────────────────────────────────────────────────────────
+
+export interface IntegrationConnection {
+  id: string;
+  provider: string;
+  status: "connected" | "disconnected" | "error";
+  last_sync_at: string | null;
+  last_error_at: string | null;
+  last_error_msg: string | null;
+  created_at: string | null;
+}
+
+export async function getIntegrations(): Promise<IntegrationConnection[]> {
+  if (process.env.MOCK_API === "true" || !process.env.INTERNAL_API_URL) {
+    return [
+      {
+        id: "mock-hubspot",
+        provider: "hubspot",
+        status: "disconnected",
+        last_sync_at: null,
+        last_error_at: null,
+        last_error_msg: null,
+        created_at: null,
+      },
+    ];
+  }
+  const res = await fetch(`${process.env.INTERNAL_API_URL}/api/v1/integrations`, {
+    cache: "no-store",
+  });
+  if (!res.ok) return [];
+  return res.json() as Promise<IntegrationConnection[]>;
+}
