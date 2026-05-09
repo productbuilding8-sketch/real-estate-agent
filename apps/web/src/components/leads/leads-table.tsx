@@ -120,10 +120,10 @@ export function LeadsTable({ leads, total, page, pageSize }: LeadsTableProps) {
                     </td>
                     <td className="hidden lg:table-cell px-4 py-3.5">
                       <Link href={`/leads/${lead.id}`}>
-                        {lead.assigned_agent_id ? (
+                        {lead.assigned_agent_name ? (
                           <span className="flex items-center gap-1.5 text-sm text-gray-700">
                             <UserCircle className="w-4 h-4 text-gray-400 shrink-0" />
-                            Agent
+                            {lead.assigned_agent_name}
                           </span>
                         ) : (
                           <span className="text-xs text-gray-400 italic">Unassigned</span>

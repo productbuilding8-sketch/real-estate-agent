@@ -7,6 +7,18 @@ import type {
 } from "@/types/leads";
 import { MOCK_LEADS, MOCK_TIMELINE, type LeadStatus as MockLeadStatus } from "@/lib/mock-leads";
 
+const DEV_TENANT_ID = "00000000-0000-0000-0000-000000000001";
+
+/** Standard headers for every server-side API call. */
+export function apiHeaders(extra?: Record<string, string>): HeadersInit {
+  return {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer dev-token",
+    "X-Tenant-ID": process.env.API_TENANT_ID ?? DEV_TENANT_ID,
+    ...extra,
+  };
+}
+
 const MOCK_STATUS_MAP: Record<MockLeadStatus, ApiLeadStatus> = {
   new: "new",
   contacted: "contacted",
@@ -31,6 +43,7 @@ const MOCK_API_LEADS: Lead[] = MOCK_LEADS.map((m) => ({
   },
   source: { id: "mock-src", name: m.source.name, type: m.source.type },
   assigned_agent_id: m.assigned_agent ? "mock-agent" : null,
+  assigned_agent_name: m.assigned_agent?.name ?? null,
   last_activity_at: m.last_activity_at,
   created_at: m.created_at,
 }));
@@ -86,9 +99,9 @@ async function fetchLeads({
   if (search) url.searchParams.set("search", search);
   if (status && status !== "all") url.searchParams.set("status", status);
   url.searchParams.set("page", String(page));
-  url.searchParams.set("page_size", String(page_size));
+  url.searchParams.set("limit", String(page_size));
 
-  const res = await fetch(url.toString(), { cache: "no-store" });
+  const res = await fetch(url.toString(), { headers: apiHeaders(), cache: "no-store" });
   if (!res.ok) throw new Error(`API error ${res.status}`);
   const data = (await res.json()) as { items: Lead[]; total: number; page: number };
   return { items: data.items, total: data.total, page: data.page, page_size };
@@ -136,6 +149,7 @@ function getMockLead(id: string): LeadDetail | null {
     },
     source: { id: "mock-src", name: m.source.name, type: m.source.type },
     assigned_agent_id: m.assigned_agent ? "mock-agent" : null,
+    assigned_agent_name: m.assigned_agent?.name ?? null,
     last_activity_at: m.last_activity_at,
     created_at: m.created_at,
     first_response_at: null,
@@ -157,6 +171,7 @@ function getMockLead(id: string): LeadDetail | null {
 
 async function fetchLead(id: string): Promise<LeadDetail | null> {
   const res = await fetch(`${process.env.INTERNAL_API_URL}/api/v1/leads/${id}`, {
+    headers: apiHeaders(),
     cache: "no-store",
   });
   if (res.status === 404) return null;
@@ -190,6 +205,7 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
     return getMockDashboardMetrics();
   }
   const res = await fetch(`${process.env.INTERNAL_API_URL}/api/v1/metrics/dashboard`, {
+    headers: apiHeaders(),
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`API error ${res.status}`);
@@ -232,13 +248,22 @@ export interface TeamMember {
   email: string;
   role_slug: string;
   is_active: boolean;
+  joined_at: string | null;
+}
+
+export interface TeamInvitation {
+  id: string;
+  email: string;
+  role_slug: string;
+  expires_at: string;
+  accepted_at: string | null;
 }
 
 const MOCK_TEAM_MEMBERS: TeamMember[] = [
-  { id: "u-001", name: "Alex Johnson", email: "alex@brokerage.com", role_slug: "owner_admin", is_active: true },
-  { id: "u-002", name: "Sarah Chen", email: "sarah@brokerage.com", role_slug: "manager", is_active: true },
-  { id: "u-003", name: "Demo Agent", email: "demo@dealflow.dev", role_slug: "agent", is_active: true },
-  { id: "u-004", name: "Michael Torres", email: "m.torres@brokerage.com", role_slug: "agent", is_active: true },
+  { id: "u-001", name: "Alex Johnson", email: "alex@brokerage.com", role_slug: "owner_admin", is_active: true, joined_at: null },
+  { id: "u-002", name: "Sarah Chen", email: "sarah@brokerage.com", role_slug: "manager", is_active: true, joined_at: null },
+  { id: "u-003", name: "Demo Agent", email: "demo@dealflow.dev", role_slug: "agent", is_active: true, joined_at: null },
+  { id: "u-004", name: "Michael Torres", email: "m.torres@brokerage.com", role_slug: "agent", is_active: true, joined_at: null },
 ];
 
 export async function getTeamMembers(): Promise<TeamMember[]> {
@@ -246,10 +271,23 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
     return MOCK_TEAM_MEMBERS;
   }
   const res = await fetch(`${process.env.INTERNAL_API_URL}/api/v1/team/members`, {
+    headers: apiHeaders(),
     cache: "no-store",
   });
   if (!res.ok) return [];
   return res.json() as Promise<TeamMember[]>;
+}
+
+export async function getTeamInvitations(): Promise<TeamInvitation[]> {
+  if (process.env.MOCK_API === "true" || !process.env.INTERNAL_API_URL) {
+    return [];
+  }
+  const res = await fetch(`${process.env.INTERNAL_API_URL}/api/v1/team/invitations`, {
+    headers: apiHeaders(),
+    cache: "no-store",
+  });
+  if (!res.ok) return [];
+  return res.json() as Promise<TeamInvitation[]>;
 }
 
 export async function getIntegrations(): Promise<IntegrationConnection[]> {
@@ -267,6 +305,7 @@ export async function getIntegrations(): Promise<IntegrationConnection[]> {
     ];
   }
   const res = await fetch(`${process.env.INTERNAL_API_URL}/api/v1/integrations`, {
+    headers: apiHeaders(),
     cache: "no-store",
   });
   if (!res.ok) return [];

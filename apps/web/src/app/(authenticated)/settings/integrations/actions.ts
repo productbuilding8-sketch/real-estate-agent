@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { apiHeaders } from "@/lib/api-client";
 
 const REVALIDATE = "/settings/integrations";
 
@@ -24,7 +25,7 @@ export async function connectIntegration(
 
   const res = await fetch(apiUrl("/integrations/connect"), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: apiHeaders(),
     body: JSON.stringify({ provider, access_token: accessToken, portal_id: portalId || null }),
     cache: "no-store",
   });
@@ -46,6 +47,7 @@ export async function disconnectIntegration(provider: string): Promise<{ error?:
 
   const res = await fetch(apiUrl(`/integrations/${provider}`), {
     method: "DELETE",
+    headers: apiHeaders(),
     cache: "no-store",
   });
 
@@ -64,6 +66,7 @@ export async function triggerSync(provider: string): Promise<{ error?: string; j
 
   const res = await fetch(apiUrl(`/integrations/${provider}/sync`), {
     method: "POST",
+    headers: apiHeaders(),
     cache: "no-store",
   });
 

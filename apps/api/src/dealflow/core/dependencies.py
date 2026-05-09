@@ -12,18 +12,29 @@ from dealflow.db.session import get_session
 
 _bearer = HTTPBearer(auto_error=False)
 
+# Fixed identity used when DEV_MODE=true. Matches the user seeded in migration 0008.
+_DEV_TOKEN = TokenPayload(
+    sub="dev|local",
+    aud="dev",
+    iss="https://dev.local/",
+    email="dev@local.dev",
+    name="Local Dev",
+)
+
 
 async def get_current_user(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
 ) -> TokenPayload:
+    settings = request.app.state.settings
+    if settings.dev_mode:
+        return _DEV_TOKEN
     if credentials is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"code": "missing_token", "message": "Authorization header required"},
             headers={"WWW-Authenticate": "Bearer"},
         )
-    settings = request.app.state.settings
     return await decode_jwt(
         credentials.credentials,
         settings.auth0_domain,

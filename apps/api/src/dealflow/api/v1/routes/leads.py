@@ -16,6 +16,8 @@ from dealflow.api.v1.schemas.leads import (
     LeadDetail,
     LeadListResponse,
     LeadStatusResponse,
+    SendEmailRequest,
+    SendEmailResponse,
     SendSmsRequest,
     SendSmsResponse,
     TimelineEventSchema,
@@ -176,3 +178,38 @@ async def send_lead_sms(
         message=body.message,
     )
     return SendSmsResponse(queued=True, job_id=job.job_id if job else None)
+
+
+@router.post(
+    "/{lead_id}/email",
+    response_model=SendEmailResponse,
+    status_code=202,
+    summary="Enqueue an outbound email to a lead",
+    responses={
+        403: {"description": "Insufficient permissions"},
+        404: {"description": "Lead not found"},
+    },
+)
+async def send_lead_email(
+    lead_id: uuid.UUID,
+    body: SendEmailRequest,
+    ctx: Annotated[RequestContext, Depends(require_permission("leads:write"))],
+    session: Annotated[AsyncSession, Depends(get_session)],
+    queue: Annotated[ArqRedis | None, Depends(get_job_queue)] = None,
+) -> SendEmailResponse:
+    service = LeadService(session, ctx.tenant_id)
+    lead = await service.get_detail(lead_id)
+    if lead is None:
+        raise AppError("lead_not_found", "Lead not found", 404)
+
+    if queue is None:
+        return SendEmailResponse(queued=False)
+
+    job = await queue.enqueue_job(
+        "send_email_job",
+        lead_id=str(lead_id),
+        tenant_id=str(ctx.tenant_id),
+        subject=body.subject,
+        body=body.body,
+    )
+    return SendEmailResponse(queued=True, job_id=job.job_id if job else None)

@@ -34,6 +34,7 @@ class LeadListItem(BaseModel):
     lead_type: str
     confidence_score: float | None = None
     assigned_agent_id: uuid.UUID | None = None
+    assigned_agent_name: str | None = None
     created_at: datetime
     last_activity_at: datetime | None = None
     contact: ContactSummary
@@ -133,5 +134,15 @@ class SendSmsRequest(BaseModel):
 
 
 class SendSmsResponse(BaseModel):
+    queued: bool
+    job_id: str | None = None
+
+
+class SendEmailRequest(BaseModel):
+    subject: str = Field(..., min_length=1, max_length=200)
+    body: str = Field(..., min_length=1, max_length=5000)
+
+
+class SendEmailResponse(BaseModel):
     queued: bool
     job_id: str | None = None

@@ -58,6 +58,7 @@ export interface Lead {
   contact: ContactSummary;
   source: SourceSummary;
   assigned_agent_id: string | null;
+  assigned_agent_name: string | null;
   last_activity_at: string | null;
   created_at: string;
 }

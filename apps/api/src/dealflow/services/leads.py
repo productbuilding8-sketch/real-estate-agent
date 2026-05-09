@@ -26,6 +26,7 @@ from dealflow.db.models.lead_ingestion import (
     LeadPreference,
     LeadSource,
 )
+from dealflow.db.models.tenant_auth import User
 
 _MAX_LIMIT = 100
 _DEFAULT_LIMIT = 20
@@ -75,11 +76,12 @@ class LeadService:
         )
 
         base = (
-            sa.select(Lead, Contact, LeadSource, email_sq.c.email, phone_sq.c.phone)
+            sa.select(Lead, Contact, LeadSource, email_sq.c.email, phone_sq.c.phone, User.name.label("agent_name"))
             .join(Contact, Lead.contact_id == Contact.id)
             .join(LeadSource, Lead.source_id == LeadSource.id)
             .outerjoin(email_sq, Contact.id == email_sq.c.contact_id)
             .outerjoin(phone_sq, Contact.id == phone_sq.c.contact_id)
+            .outerjoin(User, Lead.assigned_agent_id == User.id)
             .where(Lead.tenant_id == self._tenant_id)
         )
 
@@ -123,6 +125,7 @@ class LeadService:
                 lead_type=lead.lead_type,
                 confidence_score=lead.confidence_score,
                 assigned_agent_id=lead.assigned_agent_id,
+                assigned_agent_name=agent_name,
                 created_at=lead.created_at,
                 last_activity_at=lead.last_activity_at,
                 contact=ContactSummary(
@@ -133,7 +136,7 @@ class LeadService:
                 ),
                 source=SourceSummary(id=source.id, name=source.name, type=source.type),
             )
-            for lead, contact, source, email, phone in rows
+            for lead, contact, source, email, phone, agent_name in rows
         ]
         return items, total
 

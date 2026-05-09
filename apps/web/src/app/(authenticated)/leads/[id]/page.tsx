@@ -8,6 +8,7 @@ import { LeadPreferences } from "@/components/leads/lead-preferences";
 import { LeadStatusControl } from "@/components/leads/lead-status-control";
 import { AddNoteForm } from "@/components/leads/add-note-form";
 import { AssignLeadControl } from "@/components/leads/assign-lead-control";
+import { SendEmailForm } from "@/components/leads/send-email-form";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -93,6 +94,7 @@ export default async function LeadDetailPage({ params }: Props) {
               </h1>
               <LeadStatusControl leadId={lead.id} initialStatus={lead.status} />
               <ScoreBadge score={score} />
+              <SendEmailForm leadId={lead.id} leadEmail={lead.contact.email ?? null} />
             </div>
             <p className="text-sm text-gray-500 mt-0.5">{lead.contact.email}</p>
           </div>

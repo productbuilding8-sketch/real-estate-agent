@@ -73,7 +73,7 @@ def upgrade() -> None:
                     (id, tenant_id, type, name, source_key, secret_hash, is_active, config)
                 VALUES
                     (:id, :tenant_id, :type, :name, :source_key, :secret_hash, :is_active,
-                     :config::jsonb)
+                     CAST(:config AS jsonb))
                 ON CONFLICT (source_key) DO NOTHING
                 """
             ),

@@ -1,85 +1,40 @@
-"use client";
-
-import { useState } from "react";
 import { UserPlus } from "lucide-react";
+import { getTeamMembers, getTeamInvitations } from "@/lib/api-client";
 import { MembersTable, type Member } from "@/components/team/members-table";
 import { PendingInvitations, type PendingInvitation } from "@/components/team/pending-invitations";
-import { InviteModal } from "@/components/team/invite-modal";
 import { type RoleSlug } from "@/components/team/role-badge";
+import { TeamInviteButton } from "@/components/team/team-invite-button";
 
-// TODO: Replace with real API data once POST /api/v1/tenants/invitations is ready
-const MOCK_MEMBERS: Member[] = [
-  {
-    id: "u-001",
-    name: "Alex Johnson",
-    email: "alex@brokerage.com",
-    role_slug: "owner_admin",
-    joined_at: "2025-01-15",
-    is_active: true,
-  },
-  {
-    id: "u-002",
-    name: "Sarah Chen",
-    email: "sarah@brokerage.com",
-    role_slug: "manager",
-    joined_at: "2025-02-20",
-    is_active: true,
-  },
-  {
-    id: "u-003",
-    name: "Demo Agent",
-    email: "demo@dealflow.dev",
-    role_slug: "agent",
-    joined_at: "2026-03-01",
-    is_active: true,
-    is_you: true,
-  },
-  {
-    id: "u-004",
-    name: "Michael Torres",
-    email: "m.torres@brokerage.com",
-    role_slug: "agent",
-    joined_at: "2025-11-10",
-    is_active: true,
-  },
-  {
-    id: "u-005",
-    name: "Priya Nair",
-    email: "p.nair@brokerage.com",
-    role_slug: "auditor",
-    joined_at: "2025-09-05",
-    is_active: false,
-  },
-];
+// Dev user sub — matches the migration-seeded user
+const DEV_USER_ID = "20000000-0000-0000-0000-000000000001";
 
-const MOCK_INVITATIONS: PendingInvitation[] = [
-  {
-    id: "inv-001",
-    email: "newagent@brokerage.com",
-    role_slug: "agent",
-    expires_at: new Date(Date.now() + 58 * 60 * 60 * 1000).toISOString(), // 58h from now
-  },
-];
+export default async function TeamPage() {
+  const [apiMembers, apiInvitations] = await Promise.all([
+    getTeamMembers(),
+    getTeamInvitations(),
+  ]);
 
-export default function TeamPage() {
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [invitations, setInvitations] = useState<PendingInvitation[]>(MOCK_INVITATIONS);
+  const members: Member[] = apiMembers.map((m) => ({
+    id: m.id,
+    name: m.name,
+    email: m.email,
+    role_slug: m.role_slug as RoleSlug,
+    joined_at: m.joined_at,
+    is_active: m.is_active,
+    is_you: m.id === DEV_USER_ID,
+  }));
 
-  function handleInvited(email: string, role: RoleSlug) {
-    setInvitations((prev) => [
-      ...prev,
-      {
-        id: `inv-${Date.now()}`,
-        email,
-        role_slug: role,
-        expires_at: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
-      },
-    ]);
-  }
+  const invitations: PendingInvitation[] = apiInvitations.map((inv) => ({
+    id: inv.id,
+    email: inv.email,
+    role_slug: inv.role_slug as RoleSlug,
+    expires_at: inv.expires_at,
+  }));
+
+  const activeCount = members.filter((m) => m.is_active).length;
 
   return (
     <div className="p-6 space-y-6 max-w-4xl">
-      {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold text-gray-900">Team</h2>
@@ -87,58 +42,34 @@ export default function TeamPage() {
             Manage members and invitations for this workspace.
           </p>
         </div>
-        <button
-          onClick={() => setInviteOpen(true)}
-          className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors shadow-sm"
-        >
-          <UserPlus className="w-4 h-4" />
-          Invite member
-        </button>
+        <TeamInviteButton />
       </div>
 
-      {/* Stat strip */}
       <div className="flex items-center gap-6 rounded-xl bg-white border border-gray-200 px-5 py-4">
-        <Stat label="Total members" value={MOCK_MEMBERS.length} />
+        <Stat label="Total members" value={members.length} />
         <div className="h-8 w-px bg-gray-200" />
-        <Stat label="Active" value={MOCK_MEMBERS.filter((m) => m.is_active).length} />
+        <Stat label="Active" value={activeCount} />
         <div className="h-8 w-px bg-gray-200" />
         <Stat label="Pending invites" value={invitations.length} highlight={invitations.length > 0} />
       </div>
 
-      {/* Pending invitations */}
       <PendingInvitations invitations={invitations} />
 
-      {/* Members table */}
       <div className="space-y-2">
         <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-          Members ({MOCK_MEMBERS.length})
+          Members ({members.length})
         </h3>
-        <MembersTable members={MOCK_MEMBERS} />
+        <MembersTable members={members} />
       </div>
-
-      {/* Invite modal */}
-      <InviteModal
-        open={inviteOpen}
-        onClose={() => setInviteOpen(false)}
-        onInvited={handleInvited}
-      />
     </div>
   );
 }
 
-function Stat({
-  label, value, highlight = false,
-}: {
-  label: string;
-  value: number;
-  highlight?: boolean;
-}) {
+function Stat({ label, value, highlight = false }: { label: string; value: number; highlight?: boolean }) {
   return (
     <div>
       <p className="text-xs text-gray-500">{label}</p>
-      <p className={`text-xl font-bold ${highlight ? "text-amber-600" : "text-gray-900"}`}>
-        {value}
-      </p>
+      <p className={`text-xl font-bold ${highlight ? "text-amber-600" : "text-gray-900"}`}>{value}</p>
     </div>
   );
 }

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import uuid
-from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -21,7 +20,7 @@ def ctx() -> dict:
 
 
 def _make_execute_result(phone: str | None):
-    row = SimpleNamespace(phone=phone) if phone else None
+    row = {"phone": phone} if phone is not None else None
     result = MagicMock()
     result.mappings.return_value.one_or_none.return_value = row
     return AsyncMock(return_value=result)

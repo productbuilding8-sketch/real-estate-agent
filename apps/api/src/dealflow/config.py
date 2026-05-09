@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     auth0_domain: str = ""
     auth0_audience: str = ""
 
+    # Dev mode — skips JWT validation, uses a seeded local user. Never enable in production.
+    dev_mode: bool = False
+
     # Secrets
     secret_key: str = ""
 

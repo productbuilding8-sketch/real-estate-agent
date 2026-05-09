@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useTransition } from "react";
 import { ChevronDown } from "lucide-react";
 import { StatusBadge } from "@/components/leads/status-badge";
+import { updateLeadStatus } from "@/app/(authenticated)/leads/[id]/actions";
 import { cn } from "@/lib/cn";
 
 const TRANSITIONS: Record<string, string[]> = {
@@ -22,8 +23,8 @@ interface LeadStatusControlProps {
 export function LeadStatusControl({ leadId, initialStatus }: LeadStatusControlProps) {
   const [status, setStatus] = useState(initialStatus);
   const [open, setOpen] = useState(false);
-  const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,36 +42,28 @@ export function LeadStatusControl({ leadId, initialStatus }: LeadStatusControlPr
     return <StatusBadge status={status} />;
   }
 
-  async function changeStatus(newStatus: string) {
+  function changeStatus(newStatus: string) {
     setOpen(false);
     setError(null);
-    setPending(true);
-    try {
-      const res = await fetch(`/api/v1/leads/${leadId}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (!res.ok && res.status !== 401 && res.status !== 403) {
-        setError("Failed to update status");
-        setPending(false);
-        return;
+    const prev = status;
+    setStatus(newStatus); // optimistic
+    startTransition(async () => {
+      const result = await updateLeadStatus(leadId, newStatus);
+      if (result.error) {
+        setStatus(prev);
+        setError(result.error);
       }
-    } catch {
-      // Silently succeed in mock/offline mode — optimistic update
-    }
-    setStatus(newStatus);
-    setPending(false);
+    });
   }
 
   return (
     <div ref={ref} className="relative inline-block">
       <button
         onClick={() => setOpen((v) => !v)}
-        disabled={pending}
+        disabled={isPending}
         className={cn(
           "inline-flex items-center gap-1 rounded-full transition-opacity",
-          pending && "opacity-50 cursor-wait",
+          isPending && "opacity-50 cursor-wait",
         )}
         aria-label="Change status"
       >

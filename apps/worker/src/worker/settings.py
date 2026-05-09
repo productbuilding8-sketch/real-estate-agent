@@ -31,6 +31,14 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
 
+    # SMTP — optional; email sending is skipped if not configured
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_user: str | None = None
+    smtp_password: str | None = None
+    smtp_from_address: str | None = None
+    smtp_from_name: str = "DealFlow AI"
+
 
 @lru_cache
 def get_settings() -> Settings:

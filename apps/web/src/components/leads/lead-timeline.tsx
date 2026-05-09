@@ -6,6 +6,7 @@ import {
   UserCheck,
   UserMinus,
   MessageSquare,
+  Mail,
   RefreshCw,
   StickyNote,
   Calendar,
@@ -21,13 +22,15 @@ const EVENT_CONFIG: Record<
   { label: string; icon: ComponentType<{ className?: string }>; iconClass: string }
 > = {
   "lead.created":       { label: "Lead created",      icon: UserPlus,      iconClass: "bg-blue-100    text-blue-600"    },
+  "lead.scored":        { label: "Score calculated",  icon: Sparkles,      iconClass: "bg-purple-100  text-purple-600"  },
   "score.updated":      { label: "Score calculated",  icon: Sparkles,      iconClass: "bg-purple-100  text-purple-600"  },
   "lead.assigned":      { label: "Agent assigned",    icon: UserCheck,     iconClass: "bg-indigo-100  text-indigo-600"  },
   "lead.unassigned":    { label: "Agent unassigned",  icon: UserMinus,     iconClass: "bg-gray-100    text-gray-500"    },
   "lead.status_changed":{ label: "Status changed",    icon: RefreshCw,     iconClass: "bg-amber-100   text-amber-600"   },
   "lead.note_added":    { label: "Note added",        icon: StickyNote,    iconClass: "bg-yellow-100  text-yellow-600"  },
-  // legacy mock event types — kept so mock data still renders
+  "sms.sent":           { label: "SMS sent",          icon: MessageSquare, iconClass: "bg-emerald-100 text-emerald-600" },
   "message.sent":       { label: "Message sent",      icon: MessageSquare, iconClass: "bg-emerald-100 text-emerald-600" },
+  "email.sent":         { label: "Email sent",        icon: Mail,          iconClass: "bg-sky-100     text-sky-600"     },
   "status.changed":     { label: "Status changed",    icon: RefreshCw,     iconClass: "bg-amber-100   text-amber-600"   },
   "note.added":         { label: "Note added",        icon: StickyNote,    iconClass: "bg-yellow-100  text-yellow-600"  },
   "appointment.scheduled": { label: "Appointment scheduled", icon: Calendar, iconClass: "bg-rose-100 text-rose-600"    },
@@ -55,18 +58,23 @@ function EventDetail({
 }) {
   const d = event_data ?? {};
   if (event_type === "lead.created") {
-    return <span className="text-xs text-gray-500">Source: {str(d.source_id ?? "—")}</span>;
+    const src = str(d.source ?? d.source_id ?? "");
+    return src ? <span className="text-xs text-gray-500">Source: {src}</span> : null;
   }
-  if (event_type === "score.updated") {
+  if (event_type === "lead.scored" || event_type === "score.updated") {
+    const scoreVal = d.score !== undefined ? Math.round(Number(d.score) * 100) : null;
+    const by = str(d.method ?? d.model ?? "");
     return (
       <span className="text-xs text-gray-500">
-        Score set to <strong>{str(d.score)}</strong>
-        {d.model ? ` by ${str(d.model)}` : ""}
+        {scoreVal !== null ? <>Score: <strong>{scoreVal}</strong></> : null}
+        {d.tier ? <> &middot; {str(d.tier)}</> : null}
+        {by ? ` via ${by}` : ""}
       </span>
     );
   }
   if (event_type === "lead.assigned") {
-    return <span className="text-xs text-gray-500">Agent assigned</span>;
+    const agentName = str(d.agent_name ?? "");
+    return <span className="text-xs text-gray-500">{agentName ? `Assigned to ${agentName}` : "Agent assigned"}</span>;
   }
   if (event_type === "lead.unassigned") {
     return <span className="text-xs text-gray-500">Agent removed</span>;
@@ -84,8 +92,13 @@ function EventDetail({
     const text = str(d.text ?? d.note ?? "");
     return <span className="text-xs text-gray-500 italic">&ldquo;{text}&rdquo;</span>;
   }
-  if (event_type === "message.sent") {
-    return <span className="text-xs text-gray-500 italic">&ldquo;{str(d.preview)}&rdquo;</span>;
+  if (event_type === "sms.sent" || event_type === "message.sent") {
+    const preview = str(d.preview ?? d.body ?? "");
+    return preview ? <span className="text-xs text-gray-500 italic">&ldquo;{preview}&rdquo;</span> : null;
+  }
+  if (event_type === "email.sent") {
+    const subject = str(d.subject ?? "");
+    return subject ? <span className="text-xs text-gray-500">Subject: <em>{subject}</em></span> : null;
   }
   if (event_type === "appointment.scheduled") {
     return (
