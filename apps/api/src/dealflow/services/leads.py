@@ -140,6 +140,29 @@ class LeadService:
         ]
         return items, total
 
+    async def status_counts(self, *, search: str | None = None) -> dict[str, int]:
+        """Return total lead counts grouped by status for the tenant.
+
+        Search filter is respected; status filter is intentionally omitted so
+        all tabs show accurate totals regardless of the active filter.
+        """
+        q = (
+            sa.select(Lead.status, sa.func.count(Lead.id).label("cnt"))
+            .join(Contact, Lead.contact_id == Contact.id)
+            .where(Lead.tenant_id == self._tenant_id)
+            .group_by(Lead.status)
+        )
+        if search:
+            term = f"%{search}%"
+            q = q.where(
+                sa.or_(
+                    Contact.first_name.ilike(term),
+                    Contact.last_name.ilike(term),
+                )
+            )
+        rows = (await self._session.execute(q)).all()
+        return {row.status: row.cnt for row in rows}
+
     async def get_detail(self, lead_id: uuid.UUID) -> LeadDetail | None:
         """Return full lead detail, or None if not found / wrong tenant."""
         row_q = (

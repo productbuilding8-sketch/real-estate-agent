@@ -40,7 +40,7 @@ export function LeadPreferences({ preferences: p }: LeadPreferencesProps) {
   if (!hasContent) return null;
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 space-y-3">
+    <div className="rounded-xl border border-gray-200 bg-white shadow-card p-5 space-y-3">
       <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Preferences</h2>
       <dl className="space-y-2.5">
         {budget && (

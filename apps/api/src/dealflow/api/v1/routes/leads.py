@@ -52,14 +52,10 @@ async def list_leads(
     limit: int = Query(20, ge=1, le=100, description="Results per page"),
 ) -> LeadListResponse:
     service = LeadService(session, ctx.tenant_id)
-    items, total = await service.list(
-        status=status_filter,
-        search=search,
-        page=page,
-        limit=limit,
-    )
+    items, total = await service.list(status=status_filter, search=search, page=page, limit=limit)
+    counts = await service.status_counts(search=search)
     pages = max(1, (total + limit - 1) // limit)
-    return LeadListResponse(items=items, total=total, page=page, pages=pages)
+    return LeadListResponse(items=items, total=total, page=page, pages=pages, status_counts=counts)
 
 
 @router.get(

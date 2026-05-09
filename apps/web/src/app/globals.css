@@ -3,11 +3,12 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: 255 255 255;
-    --foreground: 17 24 39;
-  }
   body {
-    @apply bg-white text-gray-900 antialiased;
+    @apply bg-slate-50 text-gray-900 antialiased;
   }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-gray-200 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-gray-300; }
 }

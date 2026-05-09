@@ -18,7 +18,7 @@ export async function updateGeneralSettings(payload: {
     `${process.env.INTERNAL_API_URL}/api/v1/settings/general`,
     {
       method: "PATCH",
-      headers: apiHeaders(),
+      headers: await apiHeaders(),
       body: JSON.stringify(payload),
       cache: "no-store",
     },

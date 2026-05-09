@@ -1,11 +1,16 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { TopNav } from "@/components/layout/top-nav";
+import { ensureRegistered } from "@/lib/api-client";
 
-export default function AuthenticatedLayout({
+export default async function AuthenticatedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Upsert the Auth0 user + tenant membership on first login.
+  // Idempotent and skipped in MOCK_AUTH mode.
+  await ensureRegistered();
+
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <Sidebar />

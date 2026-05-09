@@ -46,6 +46,7 @@ class LeadListResponse(BaseModel):
     total: int
     page: int
     pages: int
+    status_counts: dict[str, int] = Field(default_factory=dict)
 
 
 class ContactPointSchema(BaseModel):

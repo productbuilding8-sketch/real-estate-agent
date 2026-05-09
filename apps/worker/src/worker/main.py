@@ -4,11 +4,13 @@ from __future__ import annotations
 
 from typing import Any
 
+from arq import cron
 from arq.connections import RedisSettings
 
 from worker.db import create_engine_and_session
 from worker.jobs.hubspot_sync import hubspot_sync_job
 from worker.jobs.llm_score_lead import llm_score_lead_job
+from worker.jobs.poll_outbox import poll_outbox_job
 from worker.jobs.score_lead import score_lead_job
 from worker.jobs.send_email import send_email_job
 from worker.jobs.send_sms import send_sms_job
@@ -31,6 +33,10 @@ async def on_shutdown(ctx: dict[str, Any]) -> None:
 
 class WorkerSettings:
     functions = [score_lead_job, send_sms_job, send_email_job, llm_score_lead_job, hubspot_sync_job]
+    cron_jobs = [
+        # Drain the transactional outbox every 15 seconds.
+        cron(poll_outbox_job, second={0, 15, 30, 45}, run_at_startup=True),
+    ]
     redis_settings = RedisSettings.from_dsn(_settings.redis_url)
     on_startup = on_startup
     on_shutdown = on_shutdown

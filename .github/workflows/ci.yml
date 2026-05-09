@@ -11,9 +11,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ── Python API ───────────────────────────────────────────────────────────────
+  # ── Change detection ─────────────────────────────────────────────────────────
+  # Only run an app's jobs when its files (or this workflow) changed.
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      api:    ${{ steps.filter.outputs.api }}
+      worker: ${{ steps.filter.outputs.worker }}
+      web:    ${{ steps.filter.outputs.web }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'apps/api/**'
+              - '.github/workflows/ci.yml'
+            worker:
+              - 'apps/worker/**'
+              - '.github/workflows/ci.yml'
+            web:
+              - 'apps/web/**'
+              - '.github/workflows/ci.yml'
+
+  # ── API ──────────────────────────────────────────────────────────────────────
   lint-api:
     name: Lint API
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -23,12 +50,16 @@ jobs:
       - uses: astral-sh/setup-uv@v4
         with:
           python-version: "3.12"
+          cache: true
+          cache-dependency-glob: "apps/api/uv.lock"
       - run: uv sync --extra dev
       - run: uv run ruff check src
       - run: uv run ruff format --check src
 
   typecheck-api:
     name: Typecheck API
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -38,11 +69,15 @@ jobs:
       - uses: astral-sh/setup-uv@v4
         with:
           python-version: "3.12"
+          cache: true
+          cache-dependency-glob: "apps/api/uv.lock"
       - run: uv sync --extra dev
       - run: uv run mypy src
 
   test-api:
     name: Test API
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -82,11 +117,15 @@ jobs:
       - uses: astral-sh/setup-uv@v4
         with:
           python-version: "3.12"
+          cache: true
+          cache-dependency-glob: "apps/api/uv.lock"
       - run: uv sync --extra dev
       - run: uv run pytest
 
   migration-check:
     name: Migration Check
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -114,12 +153,76 @@ jobs:
       - uses: astral-sh/setup-uv@v4
         with:
           python-version: "3.12"
+          cache: true
+          cache-dependency-glob: "apps/api/uv.lock"
       - run: uv sync --extra dev
-      - run: uv run alembic upgrade head
+      - name: Apply all migrations
+        run: uv run alembic upgrade head
+      - name: Verify no pending model changes
+        # Fails if a model was changed without a corresponding migration.
+        run: uv run alembic check
+
+  # ── Worker ───────────────────────────────────────────────────────────────────
+  lint-worker:
+    name: Lint Worker
+    needs: changes
+    if: needs.changes.outputs.worker == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/worker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+          cache: true
+          cache-dependency-glob: "apps/worker/uv.lock"
+      - run: uv sync --extra dev
+      - run: uv run ruff check src
+      - run: uv run ruff format --check src
+
+  typecheck-worker:
+    name: Typecheck Worker
+    needs: changes
+    if: needs.changes.outputs.worker == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/worker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+          cache: true
+          cache-dependency-glob: "apps/worker/uv.lock"
+      - run: uv sync --extra dev
+      - run: uv run mypy src
+
+  test-worker:
+    name: Test Worker
+    needs: changes
+    if: needs.changes.outputs.worker == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/worker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.12"
+          cache: true
+          cache-dependency-glob: "apps/worker/uv.lock"
+      - run: uv sync --extra dev
+      - run: uv run pytest
 
   # ── Web ──────────────────────────────────────────────────────────────────────
   lint-web:
-    name: Lint Web
+    name: Lint + Typecheck Web
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -140,6 +243,8 @@ jobs:
 
   test-web:
     name: Test Web
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -159,8 +264,9 @@ jobs:
 
   build-web:
     name: Build Web
+    needs: [changes, lint-web, test-web]
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
-    needs: [lint-web, test-web]
     defaults:
       run:
         working-directory: apps/web
@@ -184,3 +290,36 @@ jobs:
           cache-dependency-path: apps/web/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
+
+  # ── Gate ─────────────────────────────────────────────────────────────────────
+  # Add "CI Gate" as the single required status check in branch protection.
+  # It passes when every job either succeeded or was skipped (path filter).
+  ci-gate:
+    name: CI Gate
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - lint-api
+      - typecheck-api
+      - test-api
+      - migration-check
+      - lint-worker
+      - typecheck-worker
+      - test-worker
+      - lint-web
+      - test-web
+      - build-web
+    steps:
+      - name: All checks passed or skipped
+        run: |
+          results='${{ toJson(needs.*.result) }}'
+          echo "Job results: $results"
+          if echo "$results" | grep -q '"failure"'; then
+            echo "One or more required jobs failed."
+            exit 1
+          fi
+          if echo "$results" | grep -q '"cancelled"'; then
+            echo "One or more jobs were cancelled."
+            exit 1
+          fi
+          echo "All jobs passed or were skipped."

@@ -22,42 +22,46 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/leads", label: "Leads", icon: Users },
-  { href: "/team", label: "Team", icon: UserCog },
-  { href: "/tasks", label: "Tasks", icon: CheckSquare, disabled: true },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/leads",     label: "Leads",     icon: Users },
+  { href: "/team",      label: "Team",      icon: UserCog },
+  { href: "/tasks",     label: "Tasks",     icon: CheckSquare },
+  { href: "/settings",  label: "Settings",  icon: Settings },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-full w-60 flex-col bg-gray-900">
+    <aside className="flex h-full w-56 flex-col bg-gray-950 border-r border-white/5">
       {/* Brand */}
-      <div className="flex h-16 items-center gap-2.5 px-5 border-b border-gray-800">
-        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600">
-          <Zap className="w-4 h-4 text-white" />
+      <div className="flex h-14 items-center gap-2.5 px-4 border-b border-white/5">
+        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-600 shadow-lg shadow-indigo-900/50">
+          <Zap className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
         </div>
-        <span className="text-sm font-semibold text-white">DealFlow AI</span>
+        <span className="text-[13px] font-semibold text-white tracking-tight">DealFlow AI</span>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-2.5 py-3 space-y-0.5 overflow-y-auto">
         {navItems.map(({ href, label, icon: Icon, disabled }) => {
           const isActive = !disabled && (pathname === href || pathname.startsWith(`${href}/`));
           const itemClass = cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+            "relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium transition-all duration-150",
             isActive
-              ? "bg-indigo-600 text-white"
-              : "text-gray-400 hover:bg-gray-800 hover:text-white",
-            disabled && "opacity-40 cursor-not-allowed"
+              ? "bg-white/10 text-white"
+              : "text-gray-400 hover:bg-white/5 hover:text-gray-200",
+            disabled && "opacity-40 cursor-not-allowed pointer-events-none"
           );
-          const children = (
+
+          const inner = (
             <>
+              {isActive && (
+                <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r-full bg-indigo-400" />
+              )}
               <Icon className="w-4 h-4 shrink-0" />
               {label}
               {disabled && (
-                <span className="ml-auto text-[10px] font-normal text-gray-600 bg-gray-800 px-1.5 py-0.5 rounded">
+                <span className="ml-auto text-[10px] font-normal text-gray-600 bg-white/5 px-1.5 py-0.5 rounded-sm">
                   soon
                 </span>
               )}
@@ -65,22 +69,16 @@ export function Sidebar() {
           );
 
           return disabled ? (
-            <span key={href} className={itemClass}>
-              {children}
-            </span>
+            <span key={href} className={itemClass}>{inner}</span>
           ) : (
-            <Link key={href} href={href} className={itemClass}>
-              {children}
-            </Link>
+            <Link key={href} href={href} className={itemClass}>{inner}</Link>
           );
         })}
       </nav>
 
       {/* Footer */}
-      <div className="px-3 py-3 border-t border-gray-800">
-        <p className="px-3 text-[10px] text-gray-600 uppercase tracking-wider">
-          v0.1.0 — alpha
-        </p>
+      <div className="px-4 py-3 border-t border-white/5">
+        <p className="text-[10px] text-gray-600 tracking-widest uppercase font-medium">v0.1 alpha</p>
       </div>
     </aside>
   );

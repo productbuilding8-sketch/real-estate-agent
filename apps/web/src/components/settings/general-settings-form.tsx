@@ -42,7 +42,7 @@ interface SectionProps {
 
 function Section({ title, description, children }: SectionProps) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6">
+    <div className="rounded-xl border border-gray-200 bg-white shadow-card p-6">
       <div className="mb-4">
         <h2 className="text-sm font-semibold text-gray-900">{title}</h2>
         <p className="text-xs text-gray-500 mt-0.5">{description}</p>

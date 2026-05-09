@@ -17,7 +17,7 @@ export async function inviteTeamMember(
 
   const res = await fetch(`${BASE()}/invitations`, {
     method: "POST",
-    headers: apiHeaders(),
+    headers: await apiHeaders(),
     body: JSON.stringify({ email, role_slug: roleSlug }),
     cache: "no-store",
   });
@@ -39,7 +39,7 @@ export async function revokeInvitation(id: string): Promise<{ error?: string }> 
 
   const res = await fetch(`${BASE()}/invitations/${id}`, {
     method: "DELETE",
-    headers: apiHeaders(),
+    headers: await apiHeaders(),
     cache: "no-store",
   });
 
@@ -59,7 +59,7 @@ export async function removeMember(userId: string): Promise<{ error?: string }> 
 
   const res = await fetch(`${BASE()}/members/${userId}`, {
     method: "DELETE",
-    headers: apiHeaders(),
+    headers: await apiHeaders(),
     cache: "no-store",
   });
 
@@ -83,7 +83,7 @@ export async function changeMemberRole(
 
   const res = await fetch(`${BASE()}/members/${userId}/role`, {
     method: "PATCH",
-    headers: apiHeaders(),
+    headers: await apiHeaders(),
     body: JSON.stringify({ role_slug: roleSlug }),
     cache: "no-store",
   });

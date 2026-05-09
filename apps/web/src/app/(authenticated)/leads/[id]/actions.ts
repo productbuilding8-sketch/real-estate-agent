@@ -20,7 +20,7 @@ export async function addNote(
     `${process.env.INTERNAL_API_URL}/api/v1/leads/${leadId}/notes`,
     {
       method: "POST",
-      headers: apiHeaders(),
+      headers: await apiHeaders(),
       body: JSON.stringify({ text: text.trim() }),
       cache: "no-store",
     },
@@ -50,7 +50,7 @@ export async function assignLead(
     `${process.env.INTERNAL_API_URL}/api/v1/leads/${leadId}/assign`,
     {
       method: "PATCH",
-      headers: apiHeaders(),
+      headers: await apiHeaders(),
       body: JSON.stringify({ agent_id: agentId }),
       cache: "no-store",
     },
@@ -85,7 +85,7 @@ export async function sendEmail(
     `${process.env.INTERNAL_API_URL}/api/v1/leads/${leadId}/email`,
     {
       method: "POST",
-      headers: apiHeaders(),
+      headers: await apiHeaders(),
       body: JSON.stringify({ subject: subject.trim(), body: body.trim() }),
       cache: "no-store",
     },
@@ -115,7 +115,7 @@ export async function updateLeadStatus(
     `${process.env.INTERNAL_API_URL}/api/v1/leads/${leadId}/status`,
     {
       method: "PATCH",
-      headers: apiHeaders(),
+      headers: await apiHeaders(),
       body: JSON.stringify({ status }),
       cache: "no-store",
     },

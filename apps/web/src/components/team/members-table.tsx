@@ -139,20 +139,20 @@ interface MembersTableProps {
 
 export function MembersTable({ members }: MembersTableProps) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+    <div className="rounded-xl border border-gray-200 bg-white shadow-card overflow-hidden">
       <table className="min-w-full divide-y divide-gray-100">
         <thead>
-          <tr className="bg-gray-50">
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-            <th className="hidden sm:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-            <th className="hidden sm:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+          <tr className="bg-gray-50/80">
+            <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Member</th>
+            <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Role</th>
+            <th className="hidden sm:table-cell px-4 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Joined</th>
+            <th className="hidden sm:table-cell px-4 py-3 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Status</th>
             <th className="px-4 py-3 w-12" />
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-gray-100/80">
           {members.map((member) => (
-            <tr key={member.id} className="hover:bg-gray-50/50 transition-colors">
+            <tr key={member.id} className="hover:bg-indigo-50/20 transition-colors duration-100">
               <td className="px-4 py-3.5">
                 <div className="flex items-center gap-3">
                   <Avatar name={member.name} />

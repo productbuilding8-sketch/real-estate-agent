@@ -37,7 +37,7 @@ export default async function TeamPage() {
     <div className="p-6 space-y-6 max-w-4xl">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">Team</h2>
+          <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Team</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             Manage members and invitations for this workspace.
           </p>
@@ -45,7 +45,7 @@ export default async function TeamPage() {
         <TeamInviteButton />
       </div>
 
-      <div className="flex items-center gap-6 rounded-xl bg-white border border-gray-200 px-5 py-4">
+      <div className="flex items-center gap-6 rounded-xl bg-white border border-gray-200 shadow-card px-5 py-4">
         <Stat label="Total members" value={members.length} />
         <div className="h-8 w-px bg-gray-200" />
         <Stat label="Active" value={activeCount} />

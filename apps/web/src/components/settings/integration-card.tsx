@@ -75,7 +75,7 @@ export function IntegrationCard({
   const lastError = formatRelative(connection?.last_error_at ?? null);
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5">
+    <div className="rounded-xl border border-gray-200 bg-white shadow-card p-5">
       {/* Header row */}
       <div className="flex items-start gap-4">
         {/* Logo */}

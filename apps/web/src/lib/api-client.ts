@@ -6,14 +6,20 @@ import type {
   TimelineEvent,
 } from "@/types/leads";
 import { MOCK_LEADS, MOCK_TIMELINE, type LeadStatus as MockLeadStatus } from "@/lib/mock-leads";
+import { getAccessToken } from "@/lib/auth";
 
 const DEV_TENANT_ID = "00000000-0000-0000-0000-000000000001";
 
-/** Standard headers for every server-side API call. */
-export function apiHeaders(extra?: Record<string, string>): HeadersInit {
+/**
+ * Standard headers for every server-side API call.
+ * Reads the real Auth0 JWT access token from the session when available.
+ * In MOCK_AUTH=true mode returns "dev-token" (accepted by API when DEV_MODE=true).
+ */
+export async function apiHeaders(extra?: Record<string, string>): Promise<HeadersInit> {
+  const token = await getAccessToken();
   return {
     "Content-Type": "application/json",
-    "Authorization": "Bearer dev-token",
+    "Authorization": `Bearer ${token}`,
     "X-Tenant-ID": process.env.API_TENANT_ID ?? DEV_TENANT_ID,
     ...extra,
   };
@@ -84,9 +90,14 @@ function getMockLeads({
         (l.contact.email?.toLowerCase().includes(q) ?? false),
     );
   }
-  const total = items.length;
+  const allFiltered = items;
+  const status_counts: Record<string, number> = {};
+  for (const l of MOCK_API_LEADS) {
+    status_counts[l.status] = (status_counts[l.status] ?? 0) + 1;
+  }
+  const total = allFiltered.length;
   const offset = (page - 1) * page_size;
-  return { items: items.slice(offset, offset + page_size), total, page, page_size };
+  return { items: allFiltered.slice(offset, offset + page_size), total, page, page_size, status_counts };
 }
 
 async function fetchLeads({
@@ -101,10 +112,10 @@ async function fetchLeads({
   url.searchParams.set("page", String(page));
   url.searchParams.set("limit", String(page_size));
 
-  const res = await fetch(url.toString(), { headers: apiHeaders(), cache: "no-store" });
+  const res = await fetch(url.toString(), { headers: await apiHeaders(), cache: "no-store" });
   if (!res.ok) throw new Error(`API error ${res.status}`);
-  const data = (await res.json()) as { items: Lead[]; total: number; page: number };
-  return { items: data.items, total: data.total, page: data.page, page_size };
+  const data = (await res.json()) as { items: Lead[]; total: number; page: number; status_counts: Record<string, number> };
+  return { items: data.items, total: data.total, page: data.page, page_size, status_counts: data.status_counts ?? {} };
 }
 
 // ── Detail ────────────────────────────────────────────────────────────────────
@@ -171,7 +182,7 @@ function getMockLead(id: string): LeadDetail | null {
 
 async function fetchLead(id: string): Promise<LeadDetail | null> {
   const res = await fetch(`${process.env.INTERNAL_API_URL}/api/v1/leads/${id}`, {
-    headers: apiHeaders(),
+    headers: await apiHeaders(),
     cache: "no-store",
   });
   if (res.status === 404) return null;
@@ -205,7 +216,7 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
     return getMockDashboardMetrics();
   }
   const res = await fetch(`${process.env.INTERNAL_API_URL}/api/v1/metrics/dashboard`, {
-    headers: apiHeaders(),
+    headers: await apiHeaders(),
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`API error ${res.status}`);
@@ -271,7 +282,7 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
     return MOCK_TEAM_MEMBERS;
   }
   const res = await fetch(`${process.env.INTERNAL_API_URL}/api/v1/team/members`, {
-    headers: apiHeaders(),
+    headers: await apiHeaders(),
     cache: "no-store",
   });
   if (!res.ok) return [];
@@ -283,7 +294,7 @@ export async function getTeamInvitations(): Promise<TeamInvitation[]> {
     return [];
   }
   const res = await fetch(`${process.env.INTERNAL_API_URL}/api/v1/team/invitations`, {
-    headers: apiHeaders(),
+    headers: await apiHeaders(),
     cache: "no-store",
   });
   if (!res.ok) return [];
@@ -329,7 +340,7 @@ export async function getTenantSettings(): Promise<TenantSettings> {
     return MOCK_TENANT_SETTINGS;
   }
   const res = await fetch(`${process.env.INTERNAL_API_URL}/api/v1/settings/general`, {
-    headers: apiHeaders(),
+    headers: await apiHeaders(),
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`API error ${res.status}`);
@@ -344,12 +355,32 @@ export async function updateTenantSettings(
   }
   const res = await fetch(`${process.env.INTERNAL_API_URL}/api/v1/settings/general`, {
     method: "PATCH",
-    headers: apiHeaders(),
+    headers: await apiHeaders(),
     body: JSON.stringify(payload),
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`API error ${res.status}`);
   return res.json() as Promise<TenantSettings>;
+}
+
+// ── Registration ──────────────────────────────────────────────────────────────
+
+/**
+ * Upserts the current Auth0 user + tenant membership on first login.
+ * Idempotent — safe to call on every authenticated page render.
+ * No-op in MOCK_AUTH mode (dev user is pre-seeded via migration).
+ */
+export async function ensureRegistered(): Promise<void> {
+  if (process.env.MOCK_AUTH === "true" || !process.env.INTERNAL_API_URL) return;
+  try {
+    await fetch(`${process.env.INTERNAL_API_URL}/api/v1/auth/register`, {
+      method: "POST",
+      headers: await apiHeaders(),
+      cache: "no-store",
+    });
+  } catch {
+    // Swallow — hard failures will surface on the next protected API call.
+  }
 }
 
 export async function getIntegrations(): Promise<IntegrationConnection[]> {
@@ -367,7 +398,7 @@ export async function getIntegrations(): Promise<IntegrationConnection[]> {
     ];
   }
   const res = await fetch(`${process.env.INTERNAL_API_URL}/api/v1/integrations`, {
-    headers: apiHeaders(),
+    headers: await apiHeaders(),
     cache: "no-store",
   });
   if (!res.ok) return [];
