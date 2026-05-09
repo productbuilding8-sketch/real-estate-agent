@@ -1,12 +1,13 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Mail, Phone, Globe, UserCircle } from "lucide-react";
-import { getLead } from "@/lib/api-client";
+import { ChevronLeft, Mail, Phone, Globe } from "lucide-react";
+import { getLead, getTeamMembers } from "@/lib/api-client";
 import { ScoreBadge } from "@/components/leads/score-badge";
 import { LeadTimeline } from "@/components/leads/lead-timeline";
 import { LeadPreferences } from "@/components/leads/lead-preferences";
 import { LeadStatusControl } from "@/components/leads/lead-status-control";
 import { AddNoteForm } from "@/components/leads/add-note-form";
+import { AssignLeadControl } from "@/components/leads/assign-lead-control";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -53,7 +54,7 @@ function InfoRow({ label, value, href }: { label: string; value: string | null; 
 
 export default async function LeadDetailPage({ params }: Props) {
   const { id } = await params;
-  const lead = await getLead(id);
+  const [lead, agents] = await Promise.all([getLead(id), getTeamMembers()]);
   if (!lead) notFound();
 
   const score =
@@ -122,10 +123,16 @@ export default async function LeadDetailPage({ params }: Props) {
                 label="Type"
                 value={sourceTypeBadge[lead.source.type] ?? lead.source.type}
               />
-              <InfoRow
-                label="Agent"
-                value={lead.assigned_agent_id ? "Assigned" : "Unassigned"}
-              />
+              <div className="flex gap-2">
+                <dt className="text-xs text-gray-500 w-16 shrink-0 pt-0.5">Agent</dt>
+                <dd>
+                  <AssignLeadControl
+                    leadId={lead.id}
+                    initialAgentId={lead.assigned_agent_id}
+                    agents={agents}
+                  />
+                </dd>
+              </div>
               <InfoRow label="Lead type" value={lead.lead_type} />
             </dl>
 
@@ -161,16 +168,10 @@ export default async function LeadDetailPage({ params }: Props) {
         {/* Right column: timeline */}
         <div className="lg:col-span-2">
           <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <div className="flex items-center justify-between mb-4">
+            <div className="mb-4">
               <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Activity Timeline
               </h2>
-              {lead.assigned_agent_id && (
-                <span className="flex items-center gap-1 text-xs text-gray-500">
-                  <UserCircle className="w-3.5 h-3.5" />
-                  Assigned
-                </span>
-              )}
             </div>
             <LeadTimeline events={lead.timeline} />
             <AddNoteForm leadId={lead.id} />

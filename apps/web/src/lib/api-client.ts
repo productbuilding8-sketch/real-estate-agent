@@ -224,6 +224,34 @@ export interface IntegrationConnection {
   created_at: string | null;
 }
 
+// ── Team members ──────────────────────────────────────────────────────────────
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  role_slug: string;
+  is_active: boolean;
+}
+
+const MOCK_TEAM_MEMBERS: TeamMember[] = [
+  { id: "u-001", name: "Alex Johnson", email: "alex@brokerage.com", role_slug: "owner_admin", is_active: true },
+  { id: "u-002", name: "Sarah Chen", email: "sarah@brokerage.com", role_slug: "manager", is_active: true },
+  { id: "u-003", name: "Demo Agent", email: "demo@dealflow.dev", role_slug: "agent", is_active: true },
+  { id: "u-004", name: "Michael Torres", email: "m.torres@brokerage.com", role_slug: "agent", is_active: true },
+];
+
+export async function getTeamMembers(): Promise<TeamMember[]> {
+  if (process.env.MOCK_API === "true" || !process.env.INTERNAL_API_URL) {
+    return MOCK_TEAM_MEMBERS;
+  }
+  const res = await fetch(`${process.env.INTERNAL_API_URL}/api/v1/team/members`, {
+    cache: "no-store",
+  });
+  if (!res.ok) return [];
+  return res.json() as Promise<TeamMember[]>;
+}
+
 export async function getIntegrations(): Promise<IntegrationConnection[]> {
   if (process.env.MOCK_API === "true" || !process.env.INTERNAL_API_URL) {
     return [

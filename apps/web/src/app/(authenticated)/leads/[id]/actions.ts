@@ -36,3 +36,33 @@ export async function addNote(
   revalidatePath(`/leads/${leadId}`);
   return {};
 }
+
+export async function assignLead(
+  leadId: string,
+  agentId: string | null,
+): Promise<{ error?: string }> {
+  if (process.env.MOCK_API === "true" || !process.env.INTERNAL_API_URL) {
+    revalidatePath(`/leads/${leadId}`);
+    return {};
+  }
+
+  const res = await fetch(
+    `${process.env.INTERNAL_API_URL}/api/v1/leads/${leadId}/assign`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ agent_id: agentId }),
+      cache: "no-store",
+    },
+  );
+
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as {
+      detail?: { message?: string };
+    };
+    return { error: body.detail?.message ?? "Failed to assign lead." };
+  }
+
+  revalidatePath(`/leads/${leadId}`);
+  return {};
+}
