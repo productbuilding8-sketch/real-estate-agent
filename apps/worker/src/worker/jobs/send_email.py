@@ -39,7 +39,12 @@ _INSERT_TIMELINE_SQL = sa.text(
 def _send_smtp_email(to: str, subject: str, body: str) -> None:
     """Send an email via SMTP. Raises on failure."""
     settings = get_settings()
-    if not (settings.smtp_host and settings.smtp_user and settings.smtp_password and settings.smtp_from_address):
+    if not (
+        settings.smtp_host
+        and settings.smtp_user
+        and settings.smtp_password
+        and settings.smtp_from_address
+    ):
         raise RuntimeError("SMTP credentials not configured")
 
     msg = MIMEText(body, "plain")
@@ -76,8 +81,10 @@ async def send_email_job(
 
     async with session_maker() as session:
         row = (
-            await session.execute(_LOAD_EMAIL_SQL, {"lead_id": lid, "tenant_id": tid})
-        ).mappings().one_or_none()
+            (await session.execute(_LOAD_EMAIL_SQL, {"lead_id": lid, "tenant_id": tid}))
+            .mappings()
+            .one_or_none()
+        )
 
         if row is None:
             return {"status": "skipped", "reason": "no_primary_email"}
@@ -97,11 +104,13 @@ async def send_email_job(
                 "id": uuid.uuid4(),
                 "tenant_id": tid,
                 "lead_id": lid,
-                "event_data": json.dumps({
-                    "to": email_address,
-                    "subject": subject,
-                    "preview": body[:60],
-                }),
+                "event_data": json.dumps(
+                    {
+                        "to": email_address,
+                        "subject": subject,
+                        "preview": body[:60],
+                    }
+                ),
                 "now": now,
             },
         )

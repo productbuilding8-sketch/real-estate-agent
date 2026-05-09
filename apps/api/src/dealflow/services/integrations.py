@@ -92,8 +92,14 @@ class IntegrationService:
             "id": str(conn.id),
             "provider": conn.provider,
             "status": conn.status,
-            "last_sync_at": conn.last_sync_at.isoformat() if isinstance(conn.last_sync_at, datetime) else None,
-            "last_error_at": conn.last_error_at.isoformat() if isinstance(conn.last_error_at, datetime) else None,
+            "last_sync_at": conn.last_sync_at.isoformat()
+            if isinstance(conn.last_sync_at, datetime)
+            else None,
+            "last_error_at": conn.last_error_at.isoformat()
+            if isinstance(conn.last_error_at, datetime)
+            else None,
             "last_error_msg": conn.last_error_msg,
-            "created_at": conn.created_at.isoformat() if isinstance(conn.created_at, datetime) else None,
+            "created_at": conn.created_at.isoformat()
+            if isinstance(conn.created_at, datetime)
+            else None,
         }

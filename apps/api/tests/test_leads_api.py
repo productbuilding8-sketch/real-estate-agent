@@ -103,9 +103,15 @@ async def leads_client(test_settings: Settings, mock_session: AsyncMock) -> Asyn
 async def test_list_leads_returns_200(leads_client: AsyncClient) -> None:
     """Happy path: mocked service returns one item."""
     item = _lead_item()
-    with patch(
-        "dealflow.api.v1.routes.leads.LeadService.list",
-        new=AsyncMock(return_value=([item], 1)),
+    with (
+        patch(
+            "dealflow.api.v1.routes.leads.LeadService.list",
+            new=AsyncMock(return_value=([item], 1)),
+        ),
+        patch(
+            "dealflow.api.v1.routes.leads.LeadService.status_counts",
+            new=AsyncMock(return_value={"new": 1}),
+        ),
     ):
         resp = await leads_client.get("/api/v1/leads")
 
@@ -121,9 +127,15 @@ async def test_list_leads_returns_200(leads_client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_list_leads_empty(leads_client: AsyncClient) -> None:
     """Empty result set is valid — returns pages=1 min."""
-    with patch(
-        "dealflow.api.v1.routes.leads.LeadService.list",
-        new=AsyncMock(return_value=([], 0)),
+    with (
+        patch(
+            "dealflow.api.v1.routes.leads.LeadService.list",
+            new=AsyncMock(return_value=([], 0)),
+        ),
+        patch(
+            "dealflow.api.v1.routes.leads.LeadService.status_counts",
+            new=AsyncMock(return_value={}),
+        ),
     ):
         resp = await leads_client.get("/api/v1/leads")
 
@@ -136,10 +148,16 @@ async def test_list_leads_empty(leads_client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_list_leads_passes_filters(leads_client: AsyncClient) -> None:
     """Query params are forwarded to the service."""
-    with patch(
-        "dealflow.api.v1.routes.leads.LeadService.list",
-        new=AsyncMock(return_value=([], 0)),
-    ) as mock_list:
+    with (
+        patch(
+            "dealflow.api.v1.routes.leads.LeadService.list",
+            new=AsyncMock(return_value=([], 0)),
+        ) as mock_list,
+        patch(
+            "dealflow.api.v1.routes.leads.LeadService.status_counts",
+            new=AsyncMock(return_value={}),
+        ),
+    ):
         await leads_client.get("/api/v1/leads?status=qualified&search=Jane&page=2&limit=10")
 
     mock_list.assert_awaited_once_with(status="qualified", search="Jane", page=2, limit=10)

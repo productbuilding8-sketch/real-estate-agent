@@ -1,4 +1,3 @@
-import { UserPlus } from "lucide-react";
 import { getTeamMembers, getTeamInvitations } from "@/lib/api-client";
 import { MembersTable, type Member } from "@/components/team/members-table";
 import { PendingInvitations, type PendingInvitation } from "@/components/team/pending-invitations";

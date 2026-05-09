@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Users, TrendingUp, ArrowUpRight, Activity, Sparkles } from "lucide-react";
+import { Users, TrendingUp, ArrowUpRight, Sparkles } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { getDashboardMetrics } from "@/lib/api-client";
 import { StatusBadge } from "@/components/leads/status-badge";

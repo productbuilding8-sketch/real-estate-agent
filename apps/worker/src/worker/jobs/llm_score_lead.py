@@ -105,7 +105,9 @@ def _build_prompt(row: Any) -> str:
 
     return _USER_TEMPLATE.format(
         lead_type=row["lead_type"] or "unknown",
-        name=row["full_name"] or f"{row['first_name'] or ''} {row['last_name'] or ''}".strip() or "unknown",
+        name=row["full_name"]
+        or f"{row['first_name'] or ''} {row['last_name'] or ''}".strip()
+        or "unknown",
         has_email=row["has_email"],
         has_phone=row["has_phone"],
         budget=budget,
@@ -155,8 +157,10 @@ async def llm_score_lead_job(
 
     async with session_maker() as session:
         row = (
-            await session.execute(_LOAD_LEAD_SQL, {"lead_id": lid, "tenant_id": tid})
-        ).mappings().one_or_none()
+            (await session.execute(_LOAD_LEAD_SQL, {"lead_id": lid, "tenant_id": tid}))
+            .mappings()
+            .one_or_none()
+        )
 
         if row is None:
             return {"status": "skipped", "reason": "lead_not_found"}
@@ -205,13 +209,15 @@ async def llm_score_lead_job(
                 "id": uuid.uuid4(),
                 "tenant_id": tid,
                 "lead_id": lid,
-                "event_data": json.dumps({
-                    "score": score,
-                    "tier": tier,
-                    "summary": summary,
-                    "flags": flags,
-                    "method": method,
-                }),
+                "event_data": json.dumps(
+                    {
+                        "score": score,
+                        "tier": tier,
+                        "summary": summary,
+                        "flags": flags,
+                        "method": method,
+                    }
+                ),
                 "now": now,
             },
         )

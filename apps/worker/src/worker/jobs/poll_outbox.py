@@ -118,16 +118,16 @@ async def poll_outbox_job(ctx: dict[str, Any]) -> dict[str, Any]:
 
     # 1. Recover stale 'processing' rows from previous crashed ticks.
     async with session_maker() as session:
-        await session.execute(
-            _RECOVER_STALE_SQL, {"now": now, "threshold": stale_threshold}
-        )
+        await session.execute(_RECOVER_STALE_SQL, {"now": now, "threshold": stale_threshold})
         await session.commit()
 
     # 2. Read a batch of candidates (no lock — fast read).
     async with session_maker() as session:
         rows = (
-            await session.execute(_LIST_PENDING_SQL, {"now": now, "batch": BATCH_SIZE})
-        ).mappings().all()
+            (await session.execute(_LIST_PENDING_SQL, {"now": now, "batch": BATCH_SIZE}))
+            .mappings()
+            .all()
+        )
 
     # 3. Process each candidate.
     for row in rows:
@@ -138,8 +138,10 @@ async def poll_outbox_job(ctx: dict[str, Any]) -> dict[str, Any]:
         # Claim atomically — skip if another worker beat us to it.
         async with session_maker() as session:
             claimed = (
-                await session.execute(_CLAIM_SQL, {"id": event_id, "now": now})
-            ).mappings().one_or_none()
+                (await session.execute(_CLAIM_SQL, {"id": event_id, "now": now}))
+                .mappings()
+                .one_or_none()
+            )
             await session.commit()
 
         if claimed is None:
@@ -161,9 +163,7 @@ async def poll_outbox_job(ctx: dict[str, Any]) -> dict[str, Any]:
                 error_msg = str(exc)[:500]
 
                 if attempts >= MAX_RETRIES:
-                    await session.execute(
-                        _MARK_DEAD_SQL, {"id": event_id, "error": error_msg}
-                    )
+                    await session.execute(_MARK_DEAD_SQL, {"id": event_id, "error": error_msg})
                     dead += 1
                 else:
                     delay = _BACKOFF[min(attempts - 1, len(_BACKOFF) - 1)]

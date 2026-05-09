@@ -95,8 +95,10 @@ async def score_lead_job(
 
     async with session_maker() as session:
         row = (
-            await session.execute(_LOAD_SQL, {"lead_id": lid, "tenant_id": tid})
-        ).mappings().one_or_none()
+            (await session.execute(_LOAD_SQL, {"lead_id": lid, "tenant_id": tid}))
+            .mappings()
+            .one_or_none()
+        )
 
         if row is None:
             return {"status": "skipped", "reason": "lead_not_found"}

@@ -22,6 +22,7 @@ INVITATION_TTL_HOURS = 72
 
 # ── Pydantic models ───────────────────────────────────────────────────────────
 
+
 class TeamMember(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -54,30 +55,35 @@ class InvitationResponse(BaseModel):
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
+
 @router.get("/members", response_model=list[TeamMember])
 async def list_members(
     ctx: Annotated[RequestContext, Depends(require_permission("leads:read"))],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> list[TeamMember]:
     rows = (
-        await session.execute(
-            sa.select(
-                User.id,
-                User.name,
-                User.email,
-                TenantMembership.role_slug,
-                User.is_active,
-                TenantMembership.joined_at,
+        (
+            await session.execute(
+                sa.select(
+                    User.id,
+                    User.name,
+                    User.email,
+                    TenantMembership.role_slug,
+                    User.is_active,
+                    TenantMembership.joined_at,
+                )
+                .join(TenantMembership, TenantMembership.user_id == User.id)
+                .where(
+                    TenantMembership.tenant_id == ctx.tenant_id,
+                    TenantMembership.is_active.is_(True),
+                    User.is_active.is_(True),
+                )
+                .order_by(User.name)
             )
-            .join(TenantMembership, TenantMembership.user_id == User.id)
-            .where(
-                TenantMembership.tenant_id == ctx.tenant_id,
-                TenantMembership.is_active.is_(True),
-                User.is_active.is_(True),
-            )
-            .order_by(User.name)
         )
-    ).mappings().all()
+        .mappings()
+        .all()
+    )
 
     return [TeamMember(**dict(r)) for r in rows]
 
@@ -102,7 +108,7 @@ async def remove_member(
         )
         .values(is_active=False)
     )
-    if result.rowcount == 0:
+    if result.rowcount == 0:  # type: ignore[attr-defined]
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "not_found", "message": "Member not found."},
@@ -126,7 +132,7 @@ async def change_member_role(
         )
         .values(role_slug=body.role_slug)
     )
-    if result.rowcount == 0:
+    if result.rowcount == 0:  # type: ignore[attr-defined]
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "not_found", "message": "Member not found."},
@@ -134,15 +140,23 @@ async def change_member_role(
     await session.commit()
 
     row = (
-        await session.execute(
-            sa.select(
-                User.id, User.name, User.email,
-                TenantMembership.role_slug, User.is_active, TenantMembership.joined_at,
+        (
+            await session.execute(
+                sa.select(
+                    User.id,
+                    User.name,
+                    User.email,
+                    TenantMembership.role_slug,
+                    User.is_active,
+                    TenantMembership.joined_at,
+                )
+                .join(TenantMembership, TenantMembership.user_id == User.id)
+                .where(User.id == user_id, TenantMembership.tenant_id == ctx.tenant_id)
             )
-            .join(TenantMembership, TenantMembership.user_id == User.id)
-            .where(User.id == user_id, TenantMembership.tenant_id == ctx.tenant_id)
         )
-    ).mappings().one()
+        .mappings()
+        .one()
+    )
     return TeamMember(**dict(row))
 
 
@@ -153,16 +167,20 @@ async def list_invitations(
 ) -> list[InvitationResponse]:
     now = datetime.now(tz=UTC)
     rows = (
-        await session.execute(
-            sa.select(TenantInvitation)
-            .where(
-                TenantInvitation.tenant_id == ctx.tenant_id,
-                TenantInvitation.accepted_at.is_(None),
-                TenantInvitation.expires_at > now,
+        (
+            await session.execute(
+                sa.select(TenantInvitation)
+                .where(
+                    TenantInvitation.tenant_id == ctx.tenant_id,
+                    TenantInvitation.accepted_at.is_(None),
+                    TenantInvitation.expires_at > now,
+                )
+                .order_by(TenantInvitation.created_at.desc())
             )
-            .order_by(TenantInvitation.created_at.desc())
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     return [InvitationResponse.model_validate(r) for r in rows]
 
 
@@ -202,7 +220,7 @@ async def revoke_invitation(
             TenantInvitation.tenant_id == ctx.tenant_id,
         )
     )
-    if result.rowcount == 0:
+    if result.rowcount == 0:  # type: ignore[attr-defined]
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "not_found", "message": "Invitation not found."},

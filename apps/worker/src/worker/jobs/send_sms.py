@@ -37,7 +37,9 @@ _INSERT_TIMELINE_SQL = sa.text(
 def _send_twilio_sms(to: str, body: str) -> str:
     """Send an SMS via Twilio REST API. Returns the SID."""
     settings = get_settings()
-    if not (settings.twilio_account_sid and settings.twilio_auth_token and settings.twilio_from_number):
+    if not (
+        settings.twilio_account_sid and settings.twilio_auth_token and settings.twilio_from_number
+    ):
         raise RuntimeError("Twilio credentials not configured")
 
     # Import here so the job module loads even without twilio installed in dev
@@ -74,8 +76,10 @@ async def send_sms_job(
 
     async with session_maker() as session:
         row = (
-            await session.execute(_LOAD_PHONE_SQL, {"lead_id": lid, "tenant_id": tid})
-        ).mappings().one_or_none()
+            (await session.execute(_LOAD_PHONE_SQL, {"lead_id": lid, "tenant_id": tid}))
+            .mappings()
+            .one_or_none()
+        )
 
         if row is None:
             return {"status": "skipped", "reason": "no_primary_phone"}

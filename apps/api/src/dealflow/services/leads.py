@@ -76,7 +76,14 @@ class LeadService:
         )
 
         base = (
-            sa.select(Lead, Contact, LeadSource, email_sq.c.email, phone_sq.c.phone, User.name.label("agent_name"))
+            sa.select(
+                Lead,
+                Contact,
+                LeadSource,
+                email_sq.c.email,
+                phone_sq.c.phone,
+                User.name.label("agent_name"),
+            )
             .join(Contact, Lead.contact_id == Contact.id)
             .join(LeadSource, Lead.source_id == LeadSource.id)
             .outerjoin(email_sq, Contact.id == email_sq.c.contact_id)

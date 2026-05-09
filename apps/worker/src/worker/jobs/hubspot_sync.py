@@ -154,24 +154,39 @@ def _fetch_contacts_page(
         params["after"] = after
     if updated_after:
         # HubSpot filter: contacts updated since last sync
-        params["filterGroups"] = json.dumps([{
-            "filters": [{
-                "propertyName": "lastmodifieddate",
-                "operator": "GTE",
-                "value": str(int(updated_after.timestamp() * 1000)),
-            }]
-        }])
+        params["filterGroups"] = json.dumps(
+            [
+                {
+                    "filters": [
+                        {
+                            "propertyName": "lastmodifieddate",
+                            "operator": "GTE",
+                            "value": str(int(updated_after.timestamp() * 1000)),
+                        }
+                    ]
+                }
+            ]
+        )
     resp = httpx.post(
         f"{HUBSPOT_CONTACTS_URL}/search",
         headers={"Authorization": f"Bearer {access_token}"},
         json={
-            "filterGroups": [{
-                "filters": [{
-                    "propertyName": "lastmodifieddate",
-                    "operator": "GTE",
-                    "value": str(int((updated_after or datetime.min.replace(tzinfo=UTC)).timestamp() * 1000)),
-                }]
-            }],
+            "filterGroups": [
+                {
+                    "filters": [
+                        {
+                            "propertyName": "lastmodifieddate",
+                            "operator": "GTE",
+                            "value": str(
+                                int(
+                                    (updated_after or datetime.min.replace(tzinfo=UTC)).timestamp()
+                                    * 1000
+                                )
+                            ),
+                        }
+                    ]
+                }
+            ],
             "properties": HUBSPOT_CONTACT_PROPERTIES,
             "limit": PAGE_SIZE,
             **({"after": after} if after else {}),
@@ -215,8 +230,14 @@ async def _upsert_contact(
 
     if email:
         row = (
-            await session.execute(_FIND_CONTACT_SQL, {"tenant_id": tenant_id, "email_lower": email.lower()})
-        ).mappings().one_or_none()
+            (
+                await session.execute(
+                    _FIND_CONTACT_SQL, {"tenant_id": tenant_id, "email_lower": email.lower()}
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
         if row:
             return uuid.UUID(str(row["id"]))
 
@@ -262,11 +283,15 @@ async def _upsert_lead(
 ) -> tuple[uuid.UUID, bool]:
     """Return (lead_id, created)."""
     row = (
-        await session.execute(
-            _FIND_LEAD_BY_CRM_SQL,
-            {"connection_id": connection_id, "crm_record_id": crm_record_id},
+        (
+            await session.execute(
+                _FIND_LEAD_BY_CRM_SQL,
+                {"connection_id": connection_id, "crm_record_id": crm_record_id},
+            )
         )
-    ).mappings().one_or_none()
+        .mappings()
+        .one_or_none()
+    )
 
     if row:
         return uuid.UUID(str(row["id"])), False
@@ -314,8 +339,10 @@ async def hubspot_sync_job(
 
     async with session_maker() as session:
         conn_row = (
-            await session.execute(_LOAD_CONNECTION_SQL, {"connection_id": cid, "tenant_id": tid})
-        ).mappings().one_or_none()
+            (await session.execute(_LOAD_CONNECTION_SQL, {"connection_id": cid, "tenant_id": tid}))
+            .mappings()
+            .one_or_none()
+        )
 
         if conn_row is None:
             return {"status": "skipped", "reason": "connection_not_found"}
@@ -330,8 +357,10 @@ async def hubspot_sync_job(
             return {"status": "error", "reason": "no_access_token"}
 
         source_row = (
-            await session.execute(_FIND_HUBSPOT_SOURCE_SQL, {"tenant_id": tid})
-        ).mappings().one_or_none()
+            (await session.execute(_FIND_HUBSPOT_SOURCE_SQL, {"tenant_id": tid}))
+            .mappings()
+            .one_or_none()
+        )
         if source_row is None:
             return {"status": "error", "reason": "no_hubspot_lead_source"}
 
@@ -353,9 +382,7 @@ async def hubspot_sync_job(
                     props: dict[str, Any] = hs_contact.get("properties", {})
                     idempotency_key = f"hs-contact-{crm_record_id}"
 
-                    contact_id = await _upsert_contact(
-                        session, tenant_id=tid, props=props, now=now
-                    )
+                    contact_id = await _upsert_contact(session, tenant_id=tid, props=props, now=now)
                     lead_id, was_created = await _upsert_lead(
                         session,
                         connection_id=cid,

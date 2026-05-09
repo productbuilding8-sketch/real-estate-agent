@@ -123,6 +123,7 @@ def auth_settings() -> Settings:
         auth0_audience=TEST_AUDIENCE,
         secret_key="test-secret",
         environment="test",
+        dev_mode=False,
     )
 
 

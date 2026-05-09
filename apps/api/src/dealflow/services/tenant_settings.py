@@ -30,9 +30,7 @@ class TenantSettingsService:
         self._tenant_id = tenant_id
 
     async def _get_tenant(self) -> Tenant:
-        result = await self._session.execute(
-            sa.select(Tenant).where(Tenant.id == self._tenant_id)
-        )
+        result = await self._session.execute(sa.select(Tenant).where(Tenant.id == self._tenant_id))
         tenant = result.scalar_one_or_none()
         if tenant is None:
             raise AppError("tenant_not_found", "Tenant not found", 404)
