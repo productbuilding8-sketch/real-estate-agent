@@ -3,8 +3,8 @@ import Link from "next/link";
 import { Puzzle, SlidersHorizontal } from "lucide-react";
 
 const settingsSections = [
+  { href: "/settings/general", label: "General", icon: SlidersHorizontal },
   { href: "/settings/integrations", label: "Integrations", icon: Puzzle },
-  { href: "/settings/general", label: "General", icon: SlidersHorizontal, disabled: true },
 ];
 
 export default function SettingsLayout({ children }: { children: ReactNode }) {
@@ -18,26 +18,16 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
       <div className="flex gap-6">
         {/* Settings sub-nav */}
         <nav className="w-48 shrink-0 space-y-0.5">
-          {settingsSections.map(({ href, label, icon: Icon, disabled }) =>
-            disabled ? (
-              <span
-                key={href}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-400 cursor-not-allowed opacity-50"
-              >
-                <Icon className="w-4 h-4" />
-                {label}
-              </span>
-            ) : (
-              <Link
-                key={href}
-                href={href}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-              >
-                <Icon className="w-4 h-4" />
-                {label}
-              </Link>
-            )
-          )}
+          {settingsSections.map(({ href, label, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+            </Link>
+          ))}
         </nav>
 
         {/* Content */}

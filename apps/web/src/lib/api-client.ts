@@ -290,6 +290,68 @@ export async function getTeamInvitations(): Promise<TeamInvitation[]> {
   return res.json() as Promise<TeamInvitation[]>;
 }
 
+// ── Tenant settings ───────────────────────────────────────────────────────────
+
+export interface NotificationPreferences {
+  new_lead_email: boolean;
+  lead_assigned_email: boolean;
+  daily_summary: boolean;
+  weekly_report: boolean;
+}
+
+export interface TenantSettings {
+  name: string;
+  slug: string;
+  timezone: string;
+  notifications: NotificationPreferences;
+}
+
+export interface UpdateTenantSettingsPayload {
+  name?: string;
+  timezone?: string;
+  notifications?: NotificationPreferences;
+}
+
+const MOCK_TENANT_SETTINGS: TenantSettings = {
+  name: "DealFlow Brokerage",
+  slug: "dealflow-brokerage",
+  timezone: "America/New_York",
+  notifications: {
+    new_lead_email: true,
+    lead_assigned_email: true,
+    daily_summary: false,
+    weekly_report: false,
+  },
+};
+
+export async function getTenantSettings(): Promise<TenantSettings> {
+  if (process.env.MOCK_API === "true" || !process.env.INTERNAL_API_URL) {
+    return MOCK_TENANT_SETTINGS;
+  }
+  const res = await fetch(`${process.env.INTERNAL_API_URL}/api/v1/settings/general`, {
+    headers: apiHeaders(),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return res.json() as Promise<TenantSettings>;
+}
+
+export async function updateTenantSettings(
+  payload: UpdateTenantSettingsPayload,
+): Promise<TenantSettings> {
+  if (process.env.MOCK_API === "true" || !process.env.INTERNAL_API_URL) {
+    return { ...MOCK_TENANT_SETTINGS, ...payload };
+  }
+  const res = await fetch(`${process.env.INTERNAL_API_URL}/api/v1/settings/general`, {
+    method: "PATCH",
+    headers: apiHeaders(),
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return res.json() as Promise<TenantSettings>;
+}
+
 export async function getIntegrations(): Promise<IntegrationConnection[]> {
   if (process.env.MOCK_API === "true" || !process.env.INTERNAL_API_URL) {
     return [

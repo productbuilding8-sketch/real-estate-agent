@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from dealflow.api.v1.routes import auth, health, integrations, leads, metrics, team, webhooks
+from dealflow.api.v1.routes import auth, health, integrations, leads, metrics, settings, team, webhooks
 
 api_router = APIRouter(prefix="/api/v1")
 
@@ -24,3 +24,6 @@ api_router.include_router(integrations.router)
 
 # Team members
 api_router.include_router(team.router)
+
+# Tenant general settings
+api_router.include_router(settings.router)
